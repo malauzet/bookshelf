@@ -1,0 +1,17 @@
+# Java / Maven
+bookshelf-api/target/
+*.class
+*.jar
+
+# Angular / Node
+bookshelf-ui/node_modules/
+bookshelf-ui/dist/
+bookshelf-ui/.angular/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
