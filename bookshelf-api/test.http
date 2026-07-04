@@ -1,0 +1,24 @@
+### Get all books
+GET http://localhost:8080/api/books
+
+### Create a book
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{
+  "title": "Dune",
+  "author": "Frank Herbert",
+  "status": "READING",
+  "rating": null
+}
+
+### Create another book
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{
+  "title": "Project Hail Mary",
+  "author": "Andy Weir",
+  "status": "FINISHED",
+  "rating": 5
+}
