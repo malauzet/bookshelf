@@ -1,5 +1,6 @@
 package com.malauzet.bookshelfapi.controller;
 
+import com.malauzet.bookshelfapi.exception.BookNotFoundException;
 import com.malauzet.bookshelfapi.model.Book;
 import com.malauzet.bookshelfapi.repository.BookRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ public class BookController {
     @GetMapping("/{id}")
     public Book getBookById(@PathVariable Long id) {
         return bookRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Book not found with id " + id));
+                .orElseThrow(() -> new BookNotFoundException(id));
     }
 
     @PostMapping
@@ -33,7 +34,7 @@ public class BookController {
     @PutMapping("/{id}")
     public Book updateBook(@PathVariable Long id, @RequestBody Book updatedBook) {
         Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Book not found with id " + id));
+                .orElseThrow(() -> new BookNotFoundException(id));
         book.setTitle(updatedBook.getTitle());
         book.setAuthor(updatedBook.getAuthor());
         book.setStatus(updatedBook.getStatus());

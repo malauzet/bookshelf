@@ -1,6 +1,9 @@
 ### Get all books
 GET http://localhost:8080/api/books
 
+### Get the book with id 999
+GET http://localhost:8080/api/books/999
+
 ### Create a book
 POST http://localhost:8080/api/books
 Content-Type: application/json
