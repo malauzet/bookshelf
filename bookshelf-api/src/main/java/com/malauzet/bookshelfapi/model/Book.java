@@ -1,6 +1,7 @@
 package com.malauzet.bookshelfapi.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -19,7 +20,9 @@ public class Book {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Title is required")
     private String title;
+    @NotBlank(message = "Author is required")
     private String author;
     @Enumerated(EnumType.STRING)
     private ReadingStatus status;
@@ -32,5 +35,7 @@ public class Book {
     private Integer totalChapters;
     private LocalDate publishedDate;
     private String language;
-    private Integer rating; // 1-5, nullable until finished
+    @Min(value = 1, message = "Rating must be between 1 and 5")
+    @Max(value = 5, message = "Rating must be between 1 and 5")
+    private Integer rating;
 }

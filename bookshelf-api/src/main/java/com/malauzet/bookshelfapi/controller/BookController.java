@@ -3,6 +3,7 @@ package com.malauzet.bookshelfapi.controller;
 import com.malauzet.bookshelfapi.exception.BookNotFoundException;
 import com.malauzet.bookshelfapi.model.Book;
 import com.malauzet.bookshelfapi.repository.BookRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,12 +28,12 @@ public class BookController {
     }
 
     @PostMapping
-    public Book createBook(@RequestBody Book book) {
+    public Book createBook(@Valid @RequestBody Book book) {
         return bookRepository.save(book);
     }
 
     @PutMapping("/{id}")
-    public Book updateBook(@PathVariable Long id, @RequestBody Book updatedBook) {
+    public Book updateBook(@PathVariable Long id, @Valid @RequestBody Book updatedBook) {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new BookNotFoundException(id));
         book.setTitle(updatedBook.getTitle());
