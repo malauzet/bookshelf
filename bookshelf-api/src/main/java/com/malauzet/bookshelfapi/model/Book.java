@@ -6,6 +6,8 @@ import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+import java.time.LocalDate;
+
 @Entity
 @Getter
 @Setter
@@ -19,6 +21,16 @@ public class Book {
 
     private String title;
     private String author;
-    private String status; // e.g. "WANT_TO_READ", "READING", "FINISHED"
+    @Enumerated(EnumType.STRING)
+    private ReadingStatus status;
+    private String coverImageUrl;
+    @Column(columnDefinition = "TEXT")
+    private String synopsis;
+    private String genre;
+    private String series;
+    private Integer currentChapter;
+    private Integer totalChapters;
+    private LocalDate publishedDate;
+    private String language;
     private Integer rating; // 1-5, nullable until finished
 }
