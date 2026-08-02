@@ -13,5 +13,12 @@ bookshelf-ui/.angular/
 .vscode/
 *.iml
 
+# Claude Code (local-only, not shared/committed)
+CLAUDE.local.md
+
+# Personal project notes — repo is public/portfolio-facing, keep learning-journey
+# content and machine-specific paths out of it
+PROJECT_CONTEXT.md
+
 # OS
 .DS_Store
