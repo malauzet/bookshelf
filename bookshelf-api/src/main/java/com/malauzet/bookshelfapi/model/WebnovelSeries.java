@@ -7,9 +7,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@DiscriminatorValue("BOOK")
+@DiscriminatorValue("WEBNOVEL")
 @Getter
 @Setter
 @NoArgsConstructor
-public class BookSeries extends Series {
+public class WebnovelSeries extends Series {
 }
