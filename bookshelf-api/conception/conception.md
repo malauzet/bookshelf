@@ -12,6 +12,7 @@ Le modèle part du besoin métier (tracker de lecture façon Goodreads, cf. `PRO
 - **`volumeNumber` reste sur `Work`, partagé par toutes les sous-classes** : une même histoire peut exister en plusieurs tomes et/ou en une séquence continue, tous rattachés à une série — mais l'`id` technique d'un `Work` n'a aucune signification d'ordre. `volumeNumber` (`Integer`, nullable) sert à ordonner les entrées d'une série ; nullable, une œuvre standalone (pas de série) ou une entrée non numérotée n'en a pas. Une version antérieure de ce document l'avait fait migrer vers chaque sous-classe en même temps que `series_id`, par cohérence avec ce dernier — mais contrairement à `series_id` (qui doit être typé par sous-classe pour la raison ci-dessous), `volumeNumber` est rigoureusement identique dans chaque sous-classe (même type, même sens) : le dupliquer cinq fois n'apportait aucune garantie supplémentaire, seulement de la répétition. Remonté sur `Work` une fois ce constat fait.
 - **Une `Series` est contenue à un seul format** : la saga *Lord of the Mysteries* illustre le besoin — sa "série webnovel" (`Lord of the Mysteries` tome 1, `Circle of Inevitability` tome 2) est une séquence distincte d'une éventuelle future "série de tomes imprimés" du même univers, si un éditeur découpe un jour le webnovel en volumes papier. Ce sont deux séquences d'ordre indépendantes, pas une seule série mélangeant les formats. Un `series_id` générique porté par `Work` ne pourrait pas empêcher structurellement un `Book` de pointer vers ce qui devait être une série réservée aux `Webnovel` — seule une convention de code le garantirait. Modélisé en miroir de la hiérarchie `Work` : `Series` devient abstraite (`id`, `name`, `author`), avec des sous-classes `BookSeries`/`WebnovelSeries`/`AudiobookSeries`/`MangaSeries`/`LightNovelSeries` qui n'ajoutent aucun attribut propre — elles existent uniquement pour que chaque sous-classe de `Work` puisse référencer *sa* table de série spécifiquement (`book.series_id → book_series.id`, `webnovel.series_id → webnovel_series.id`, etc.), rendant le mélange de formats structurellement impossible plutôt que simplement déconseillé. `series_id` quitte donc `Work` pour vivre sur chaque sous-classe ; `volumeNumber`, lui, reste sur `Work` (voir point précédent).
 - **`Series.name` toujours pas unique, `Series.author` toujours obligatoire** : deux séries différentes (même dans un même format) peuvent légitimement partager un titre (deux auteurs différents publiant chacun une série "Welcome to Hell", par exemple) — une contrainte UNIQUE(name) romprait ce cas réel. `author` reste `NOT NULL` pour permettre de désambiguïser systématiquement à l'affichage/recherche.
+- **`totalVolumes` ajouté sur `Series`, à côté de `volumeNumber` sur `Work`** : `volumeNumber` (sur `Work`) numérote un tome individuel au sein de sa série ; `totalVolumes` (sur `Series`) donne le nombre total de tomes prévus/publiés pour la série entière. C'est une propriété de la série elle-même, pas de chaque tome — la porter sur `Work` aurait dupliqué la même valeur sur chaque œuvre rattachée à la série, exactement le problème déjà évité en remontant `volumeNumber` (voir point précédent, cas inverse). `Integer`, nullable : une série en cours (ex. webnovel toujours en publication) ne connaît pas encore son total final.
 - **Faire évoluer l'enum `Genre` a un coût caché** : ajouter une constante est sans risque (aucune ligne existante n'est affectée). **Renommer** ou **supprimer** une constante déjà utilisée dans `work_genre` casse silencieusement la lecture de ces lignes : `EnumType.STRING` protège contre la réorganisation de l'ordre des constantes (contrairement à `ORDINAL`), mais pas contre un renommage — Hibernate lève une `IllegalArgumentException` au premier chargement d'une ligne portant l'ancien nom, à l'exécution, pas à la compilation. Un renommage/suppression nécessite donc une vraie migration de données (`UPDATE work_genre SET genre = ... WHERE genre = ...` avant de retirer la constante côté code) — rejoint la remarque déjà faite dans `PROJECT_CONTEXT.md` sur Flyway/Liquibase comme future gestion propre des migrations de schéma et de données.
 - **`totalChapters`/`currentChapter` restent communs à tous les formats, mais `totalPages`/`currentPage` et `totalTime`/`currentTime` s'ajoutent là où c'est pertinent** : chapitre reste l'unité de progression universelle (webnovel, book, light novel, manga, audiobook ont tous un découpage en chapitres) ; `Book`/`LightNovel`/`Manga` ont en plus un total de pages ; `Audiobook` a en plus une durée. Ajoutés en sous-classe (`Book.totalPages`, `Audiobook.totalTime`, etc.) plutôt que sur `Work`, pour la même raison que `narrator`/`artist` : ces colonnes n'ont pas de sens pour un `Webnovel`. Côté colonnes SQL, `totalTime`/`currentTime` sont mappées sur `total_minutes`/`current_minutes` plutôt que `total_time`/`current_time` : `CURRENT_TIME` est un mot réservé MariaDB/MySQL (fonction équivalente à `CURTIME()`), même catégorie de problème que `user` → `app_user`.
 - **`UserWork` devient elle aussi une hiérarchie (`UserBook`/`UserWebnovel`/`UserLightNovel`/`UserManga`/`UserAudiobook`)** : suivre la progression d'un utilisateur en pages (`currentPage`) ou en temps (`currentTime`) est spécifique au format suivi, exactement comme `totalPages`/`totalTime` côté `Work` — les mêmes colonnes nullables éparses réapparaîtraient sur une `UserWork` non subdivisée. `status`/`rating`/`currentChapter` restent sur `UserWork` (communs à tous les formats) ; `currentPage` est ajouté sur `UserBook`/`UserLightNovel`/`UserManga`, `currentTime` sur `UserAudiobook`. Stratégie `JOINED`, même raisonnement que pour `Work` (colonnes réellement différentes selon la sous-classe → `SINGLE_TABLE` recréerait le problème).
@@ -73,6 +74,7 @@ classDiagram
         +Long id
         +String name
         +String author
+        +Integer totalVolumes
     }
 
     class BookSeries {
@@ -242,6 +244,7 @@ erDiagram
         varchar series_type
         varchar name
         varchar author
+        int total_volumes
     }
 
     BOOK_SERIES {
@@ -354,7 +357,7 @@ Toutes les entités utilisent des clés techniques `BIGINT AUTO_INCREMENT` (`Lon
 
 ### Stratégie d'héritage de Series (BookSeries / WebnovelSeries / AudiobookSeries / MangaSeries / LightNovelSeries)
 
-`JOINED` retenu ici aussi, mais pour une raison différente de celle de `Work` : aucune sous-classe de `Series` n'ajoute de colonne propre (toutes ont exactement `id`/`name`/`author`), donc l'argument "éviter des colonnes nullables éparses" ne s'applique pas. La raison est plutôt de donner à chaque sous-classe de `Work` une **FK typée** vers sa propre table de série (`book.series_id → book_series.id`, `webnovel.series_id → webnovel_series.id`, etc.) : la base garantit ainsi structurellement qu'un `Book` ne peut jamais référencer une `WebnovelSeries`. Alternative écartée : une seule table `series` avec une colonne `format`, et la règle "un `Book` ne référence qu'une série `format = BOOK`" vérifiée uniquement côté service/validation — plus simple (une seule table), mais la contrainte ne serait garantie que par la discipline du code, pas par le schéma.
+`JOINED` retenu ici aussi, mais pour une raison différente de celle de `Work` : aucune sous-classe de `Series` n'ajoute de colonne propre (toutes ont exactement `id`/`name`/`author`/`total_volumes`), donc l'argument "éviter des colonnes nullables éparses" ne s'applique pas. La raison est plutôt de donner à chaque sous-classe de `Work` une **FK typée** vers sa propre table de série (`book.series_id → book_series.id`, `webnovel.series_id → webnovel_series.id`, etc.) : la base garantit ainsi structurellement qu'un `Book` ne peut jamais référencer une `WebnovelSeries`. Alternative écartée : une seule table `series` avec une colonne `format`, et la règle "un `Book` ne référence qu'une série `format = BOOK`" vérifiée uniquement côté service/validation — plus simple (une seule table), mais la contrainte ne serait garantie que par la discipline du code, pas par le schéma.
 
 ### Stratégie d'héritage de UserWork (UserBook / UserWebnovel / UserAudiobook / UserManga / UserLightNovel)
 
@@ -372,6 +375,7 @@ Le vocabulaire actuel (`FANTASY`, `SCIENCE_FICTION`, `ROMANCE`, ...) est un prem
 
 - `BOOK.series_id` / `WEBNOVEL.series_id` / `AUDIOBOOK.series_id` / `MANGA.series_id` / `LIGHT_NOVEL.series_id` : nullable (`0..1`) — toutes les œuvres ne font pas partie d'une série.
 - `WORK.volume_number` : nullable — n'a de sens que pour une œuvre rattachée à une série et numérotée dans celle-ci ; une œuvre standalone n'en a pas. Reste sur `WORK` (pas sur les sous-classes) car identique pour tous les formats, contrairement à `series_id` (voir section 1 et "Stratégie d'héritage de Work").
+- `SERIES.total_volumes` : nullable — le nombre total de tomes n'est pas toujours connu, notamment pour une série encore en cours de publication (voir section 1).
 - `WORK.total_chapters` : nullable — inconnu pour un webnovel en cours de publication.
 - `BOOK.total_pages` / `MANGA.total_pages` / `LIGHT_NOVEL.total_pages` : nullable — peut rester inconnu (édition non encore cataloguée en détail).
 - `AUDIOBOOK.total_minutes` : nullable — même raison ; exprimé en minutes (`INT`), pas de type `TIME`/`DURATION` dédié, cohérent avec la simplicité des autres colonnes numériques du schéma. Nommé `total_minutes` (pas `total_time`) : `CURRENT_TIME` est un mot réservé MariaDB/MySQL, mieux vaut éviter `time` dans un nom de colonne par prudence.
@@ -443,11 +447,18 @@ CREATE TABLE app_user (
 -- Pas de contrainte d'unicité sur name : deux séries différentes peuvent
 -- légitimement partager un titre (auteurs différents) ; author est
 -- obligatoire pour permettre de les distinguer à l'affichage/recherche.
+-- total_volumes : nombre total de tomes de la série (nullable, inconnu tant
+-- que la série n'est pas terminée) ; à ne pas confondre avec
+-- work.volume_number, qui numérote un tome individuel (voir section 1).
 CREATE TABLE series (
-    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
-    series_type  VARCHAR(20) NOT NULL,
-    name         VARCHAR(255) NOT NULL,
-    author       VARCHAR(255) NOT NULL
+    id             BIGINT AUTO_INCREMENT PRIMARY KEY,
+    series_type    VARCHAR(20) NOT NULL,
+    name           VARCHAR(255) NOT NULL,
+    author         VARCHAR(255) NOT NULL,
+    total_volumes  INT,
+
+    CONSTRAINT chk_series_total_volumes
+        CHECK (total_volumes IS NULL OR total_volumes > 0)
 );
 
 -- Tables filles JOINED de series : une par format, sans colonne propre —
