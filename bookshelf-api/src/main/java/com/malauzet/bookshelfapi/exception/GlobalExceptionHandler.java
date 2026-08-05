@@ -20,6 +20,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
+    @ExceptionHandler(BookSeriesNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleBookSeriesNotFoundException(BookSeriesNotFoundException e) {
+        ErrorResponse error = new ErrorResponse(e.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
     @ExceptionHandler(DuplicateUsernameException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateUsernameException(DuplicateUsernameException e) {
         ErrorResponse error = new ErrorResponse(e.getMessage(), null);

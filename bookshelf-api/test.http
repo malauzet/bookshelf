@@ -33,3 +33,59 @@ Content-Type: application/json
   "password": "",
   "email": "bad@example.com"
 }
+
+
+### Create a book series
+POST http://localhost:8080/api/book-series
+Content-Type: application/json
+
+{
+  "name": "The Wandering Inn",
+  "author": "pirateaba",
+  "totalVolumes": null
+}
+
+### Get all book series
+GET http://localhost:8080/api/book-series
+
+### Get the series just created (swap 1 for whatever id the create response returned)
+GET http://localhost:8080/api/book-series/1
+
+### Get a series that doesn't exist -> expect 404
+GET http://localhost:8080/api/book-series/999
+
+### Update the series (swap 1 for the real id)
+PUT http://localhost:8080/api/book-series/1
+Content-Type: application/json
+
+{
+  "name": "The Wandering Inn",
+  "author": "pirateaba",
+  "totalVolumes": 12
+}
+
+### Update a series that doesn't exist -> expect 404
+PUT http://localhost:8080/api/book-series/999
+Content-Type: application/json
+
+{
+  "name": "Doesn't matter",
+  "author": "Doesn't matter",
+  "totalVolumes": 1
+}
+
+### Create with blank name and author -> expect 400 with fieldError map
+POST http://localhost:8080/api/book-series
+Content-Type: application/json
+
+{
+  "name": "",
+  "author": "",
+  "totalVolumes": 1
+}
+
+### Delete the series (swap 1 for the real id)
+DELETE http://localhost:8080/api/book-series/1
+
+### Get the deleted series -> expect 404
+GET http://localhost:8080/api/book-series/1
