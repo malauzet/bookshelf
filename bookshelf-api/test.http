@@ -1,46 +1,35 @@
-### Get all books
-GET http://localhost:8080/api/books
-
-### Get the book with id 999
-GET http://localhost:8080/api/books/999
-
-### Create a book
-POST http://localhost:8080/api/books
+### Register a new user
+POST http://localhost:8080/api/users
 Content-Type: application/json
 
 {
-  "title": "Dune",
-  "author": "Frank Herbert",
-  "status": "READING",
-  "rating": null,
-  "coverImageUrl": "https://m.media-amazon.com/images/S/compressed.photo.goodreads.com/books/1555447414i/44767458.jpg",
-  "synopsis": "Set on the desert planet Arrakis, Dune is the story of the boy Paul Atreides, heir to a noble family tasked with ruling an inhospitable world where the only thing of value is the “spice” melange, a drug capable of extending life and enhancing consciousness. Coveted across the known universe, melange is a prize worth killing for... \nWhen House Atreides is betrayed, the destruction of Paul’s family will set the boy on a journey toward a destiny greater than he could ever have imagined. And as he evolves into the mysterious man known as Muad’Dib, he will bring to fruition humankind’s most ancient and unattainable dream.",
-  "genre": "Science Fiction, Fiction, Fantasy, Space Opera, Adventure",
-  "series": "Dune",
-  "currentChapter": 0,
-  "totalChapters": 48,
-  "publishedDate": "1965-06-01",
-  "language": "English"
+  "username": "malauzet",
+  "password": "supersecret",
+  "email": "malauzet@example.com"
 }
 
-### Create another book
-POST http://localhost:8080/api/books
+### Get the user just created (swap 1 for whatever id the register response returned)
+GET http://localhost:8080/api/users/1
+
+### Get a user that doesn't exist -> expect 404
+GET http://localhost:8080/api/users/999
+
+### Register the same username again -> expect 409 (duplicate)
+POST http://localhost:8080/api/users
 Content-Type: application/json
 
 {
-  "title": "Project Hail Mary",
-  "author": "Andy Weir",
-  "status": "FINISHED",
-  "rating": 5
+  "username": "malauzet",
+  "password": "anotherpassword",
+  "email": "someoneelse@example.com"
 }
 
-### Create another book
-POST http://localhost:8080/api/books
+### Register with blank username and password -> expect 400 with fieldError map
+POST http://localhost:8080/api/users
 Content-Type: application/json
 
 {
-  "title": "",
-  "author": "Bob Chalice",
-  "status": "WAITING",
-  "rating": 8
+  "username": "",
+  "password": "",
+  "email": "bad@example.com"
 }
