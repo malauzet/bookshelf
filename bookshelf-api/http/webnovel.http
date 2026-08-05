@@ -1,0 +1,329 @@
+### ==================================================================
+### WEBNOVEL SERIES
+### ==================================================================
+
+### Create a webnovel series
+POST http://localhost:8080/api/webnovel-series
+Content-Type: application/json
+
+{
+  "name": "Mother of Learning",
+  "author": "nobody103",
+  "totalVolumes": null
+}
+
+> {%
+    client.global.set("mothOfLearningSeriesId", response.body.id);
+%}
+
+### Get all webnovel series
+GET http://localhost:8080/api/webnovel-series
+
+### Get the series just created
+GET http://localhost:8080/api/webnovel-series/{{mothOfLearningSeriesId}}
+
+### Get a series that doesn't exist -> expect 404
+GET http://localhost:8080/api/webnovel-series/999
+
+### Update the series
+PUT http://localhost:8080/api/webnovel-series/{{mothOfLearningSeriesId}}
+Content-Type: application/json
+
+{
+  "name": "Mother of Learning",
+  "author": "nobody103",
+  "totalVolumes": 1
+}
+
+### Update a series that doesn't exist -> expect 404
+PUT http://localhost:8080/api/webnovel-series/999
+Content-Type: application/json
+
+{
+  "name": "Doesn't matter",
+  "author": "Doesn't matter",
+  "totalVolumes": 1
+}
+
+### Create with blank name and author -> expect 400 with fieldError map
+POST http://localhost:8080/api/webnovel-series
+Content-Type: application/json
+
+{
+  "name": "",
+  "author": "",
+  "totalVolumes": 1
+}
+
+### Delete the series
+DELETE http://localhost:8080/api/webnovel-series/{{mothOfLearningSeriesId}}
+
+### Get the deleted series -> expect 404
+GET http://localhost:8080/api/webnovel-series/{{mothOfLearningSeriesId}}
+
+
+### ==================================================================
+### WEBNOVEL
+### ==================================================================
+
+### Create a fresh series for the webnovel tests below
+POST http://localhost:8080/api/webnovel-series
+Content-Type: application/json
+
+{
+  "name": "Beware of Chicken",
+  "author": "CasualFarmer",
+  "totalVolumes": 5
+}
+
+> {%
+    client.global.set("bewareOfChickenSeriesId", response.body.id);
+%}
+
+### Create a standalone webnovel (no series)
+POST http://localhost:8080/api/webnovels
+Content-Type: application/json
+
+{
+  "title": "Worm",
+  "author": "Wildbow",
+  "synopsis": "A girl with the power to control insects gets drawn into a world of superhumans.",
+  "coverImageUrl": null,
+  "publishedDate": "2011-06-11",
+  "totalChapters": 300,
+  "volumeNumber": null,
+  "genres": ["SUPERNATURAL", "URBAN_FANTASY"]
+}
+
+> {%
+    client.global.set("wormWebnovelId", response.body.id);
+%}
+
+### Create a webnovel attached to the series above
+POST http://localhost:8080/api/webnovels?seriesId={{bewareOfChickenSeriesId}}
+Content-Type: application/json
+
+{
+  "title": "Beware of Chicken",
+  "author": "CasualFarmer",
+  "synopsis": "A cultivator retires from the martial world to become a farmer, and gets pulled back in anyway.",
+  "coverImageUrl": null,
+  "publishedDate": "2020-06-25",
+  "totalChapters": 150,
+  "volumeNumber": 1,
+  "genres": ["COMEDY", "SLICE_OF_LIFE", "MARTIAL_ARTS"]
+}
+
+> {%
+    client.global.set("bewareOfChickenWebnovelId", response.body.id);
+%}
+
+### Get all webnovels
+GET http://localhost:8080/api/webnovels
+
+### Get the standalone webnovel -> series should be null
+GET http://localhost:8080/api/webnovels/{{wormWebnovelId}}
+
+### Get the series-linked webnovel -> series should be populated
+GET http://localhost:8080/api/webnovels/{{bewareOfChickenWebnovelId}}
+
+### Get a webnovel that doesn't exist -> expect 404
+GET http://localhost:8080/api/webnovels/999
+
+### Create a webnovel with a non-existent seriesId -> expect 404 (WebnovelSeriesNotFoundException)
+POST http://localhost:8080/api/webnovels?seriesId=999
+Content-Type: application/json
+
+{
+  "title": "Doesn't matter",
+  "author": "Doesn't matter"
+}
+
+### Create a webnovel with blank title and author -> expect 400 with fieldError map
+POST http://localhost:8080/api/webnovels
+Content-Type: application/json
+
+{
+  "title": "",
+  "author": ""
+}
+
+### Update the standalone webnovel, attaching it to the series too
+PUT http://localhost:8080/api/webnovels/{{wormWebnovelId}}?seriesId={{bewareOfChickenSeriesId}}
+Content-Type: application/json
+
+{
+  "title": "Worm",
+  "author": "Wildbow",
+  "synopsis": "A girl with the power to control insects gets drawn into a world of superhumans.",
+  "coverImageUrl": null,
+  "publishedDate": "2011-06-11",
+  "totalChapters": 300,
+  "volumeNumber": 2,
+  "genres": ["SUPERNATURAL", "URBAN_FANTASY"]
+}
+
+### Update a webnovel that doesn't exist -> expect 404
+PUT http://localhost:8080/api/webnovels/999
+Content-Type: application/json
+
+{
+  "title": "Doesn't matter",
+  "author": "Doesn't matter"
+}
+
+### Try deleting the series while webnovels still reference it -> expect the RESTRICT FK to kick in (409)
+DELETE http://localhost:8080/api/webnovel-series/{{bewareOfChickenSeriesId}}
+
+### Delete both webnovels
+DELETE http://localhost:8080/api/webnovels/{{wormWebnovelId}}
+
+### Delete the other webnovel
+DELETE http://localhost:8080/api/webnovels/{{bewareOfChickenWebnovelId}}
+
+### Now nothing references the series -> delete should succeed this time
+DELETE http://localhost:8080/api/webnovel-series/{{bewareOfChickenSeriesId}}
+
+
+### ==================================================================
+### USER WEBNOVEL (tracking)
+### ==================================================================
+
+### Register a dedicated user for the tracking tests below, so this file can run standalone
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "username": "webnovel-tracker",
+  "password": "supersecret",
+  "email": "webnovel-tracker@example.com"
+}
+
+> {%
+    client.global.set("webnovelTrackerUserId", response.body.id);
+%}
+
+### Create a fresh standalone webnovel to track
+POST http://localhost:8080/api/webnovels
+Content-Type: application/json
+
+{
+  "title": "Mother of Learning",
+  "author": "nobody103",
+  "synopsis": "A slacker student gets stuck in a time loop and uses it to master magic.",
+  "coverImageUrl": null,
+  "publishedDate": "2016-01-09",
+  "totalChapters": 122,
+  "volumeNumber": null,
+  "genres": ["FANTASY", "TIME_TRAVEL"]
+}
+
+> {%
+    client.global.set("mothOfLearningWebnovelId", response.body.id);
+%}
+
+### Start tracking the webnovel above
+POST http://localhost:8080/api/users/{{webnovelTrackerUserId}}/webnovels/{{mothOfLearningWebnovelId}}
+Content-Type: application/json
+
+{
+  "status": "READING",
+  "rating": null,
+  "currentChapter": 10
+}
+
+> {%
+    client.global.set("userWebnovelWorkId", response.body.id);
+%}
+
+### List the READING tab -> should include the tracking record just created
+GET http://localhost:8080/api/users/{{webnovelTrackerUserId}}/user-works?status=READING
+
+### List the FINISHED tab -> should be empty
+GET http://localhost:8080/api/users/{{webnovelTrackerUserId}}/user-works?status=FINISHED
+
+### Track the same webnovel again for the same user -> expect 409 (DuplicateTrackingException)
+POST http://localhost:8080/api/users/{{webnovelTrackerUserId}}/webnovels/{{mothOfLearningWebnovelId}}
+Content-Type: application/json
+
+{
+  "status": "READING",
+  "rating": null,
+  "currentChapter": 1
+}
+
+### Track for a user that doesn't exist -> expect 404
+POST http://localhost:8080/api/users/999/webnovels/{{mothOfLearningWebnovelId}}
+Content-Type: application/json
+
+{
+  "status": "PLAN_TO_READ"
+}
+
+### Track a webnovel that doesn't exist -> expect 404
+POST http://localhost:8080/api/users/{{webnovelTrackerUserId}}/webnovels/999
+Content-Type: application/json
+
+{
+  "status": "PLAN_TO_READ"
+}
+
+### Update progress only -> status/rating should stay untouched
+PATCH http://localhost:8080/api/users/{{webnovelTrackerUserId}}/user-works/{{userWebnovelWorkId}}
+Content-Type: application/json
+
+{
+  "currentChapter": 25
+}
+
+### Update just the rating -> chapter from above should be unaffected
+PATCH http://localhost:8080/api/users/{{webnovelTrackerUserId}}/user-works/{{userWebnovelWorkId}}
+Content-Type: application/json
+
+{
+  "rating": 10
+}
+
+### Update with an out-of-range rating -> expect 400 (validation runs on PATCH too)
+PATCH http://localhost:8080/api/users/{{webnovelTrackerUserId}}/user-works/{{userWebnovelWorkId}}
+Content-Type: application/json
+
+{
+  "rating": 15
+}
+
+### Register a second user, to test the ownership check
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "username": "webnovel-tracker-2",
+  "password": "supersecret",
+  "email": "webnovel-tracker-2@example.com"
+}
+
+> {%
+    client.global.set("otherWebnovelTrackerUserId", response.body.id);
+%}
+
+### Try updating user 1's tracking record through user 2's path -> expect 404, not 200
+PATCH http://localhost:8080/api/users/{{otherWebnovelTrackerUserId}}/user-works/{{userWebnovelWorkId}}
+Content-Type: application/json
+
+{
+  "rating": 1
+}
+
+### Update a user-work that doesn't exist -> expect 404
+PATCH http://localhost:8080/api/users/{{webnovelTrackerUserId}}/user-works/999
+Content-Type: application/json
+
+{
+  "rating": 5
+}
+
+### Stop tracking -> expect 204
+DELETE http://localhost:8080/api/users/{{webnovelTrackerUserId}}/user-works/{{userWebnovelWorkId}}
+
+### Confirm it's gone -> READING tab should be empty again
+GET http://localhost:8080/api/users/{{webnovelTrackerUserId}}/user-works?status=READING

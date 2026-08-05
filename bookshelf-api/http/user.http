@@ -1,0 +1,39 @@
+### Register a new user
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "username": "malauzet",
+  "password": "supersecret",
+  "email": "malauzet@example.com"
+}
+
+> {%
+    client.global.set("userId", response.body.id);
+%}
+
+### Get the user just created
+GET http://localhost:8080/api/users/{{userId}}
+
+### Get a user that doesn't exist -> expect 404
+GET http://localhost:8080/api/users/999
+
+### Register the same username again -> expect 409 (duplicate)
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "username": "malauzet",
+  "password": "anotherpassword",
+  "email": "someoneelse@example.com"
+}
+
+### Register with blank username and password -> expect 400 with fieldError map
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "username": "",
+  "password": "",
+  "email": "bad@example.com"
+}

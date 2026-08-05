@@ -1,43 +1,6 @@
-### Register a new user
-POST http://localhost:8080/api/users
-Content-Type: application/json
-
-{
-  "username": "malauzet",
-  "password": "supersecret",
-  "email": "malauzet@example.com"
-}
-
-> {%
-    client.global.set("userId", response.body.id);
-%}
-
-### Get the user just created
-GET http://localhost:8080/api/users/{{userId}}
-
-### Get a user that doesn't exist -> expect 404
-GET http://localhost:8080/api/users/999
-
-### Register the same username again -> expect 409 (duplicate)
-POST http://localhost:8080/api/users
-Content-Type: application/json
-
-{
-  "username": "malauzet",
-  "password": "anotherpassword",
-  "email": "someoneelse@example.com"
-}
-
-### Register with blank username and password -> expect 400 with fieldError map
-POST http://localhost:8080/api/users
-Content-Type: application/json
-
-{
-  "username": "",
-  "password": "",
-  "email": "bad@example.com"
-}
-
+### ==================================================================
+### BOOK SERIES
+### ==================================================================
 
 ### Create a book series
 POST http://localhost:8080/api/book-series
@@ -98,6 +61,10 @@ DELETE http://localhost:8080/api/book-series/{{wanderingInnSeriesId}}
 ### Get the deleted series -> expect 404
 GET http://localhost:8080/api/book-series/{{wanderingInnSeriesId}}
 
+
+### ==================================================================
+### BOOK
+### ==================================================================
 
 ### Create a fresh series for the book tests below
 POST http://localhost:8080/api/book-series
@@ -221,6 +188,24 @@ DELETE http://localhost:8080/api/books/{{finalEmpireBookId}}
 DELETE http://localhost:8080/api/book-series/{{mistbornSeriesId}}
 
 
+### ==================================================================
+### USER BOOK (tracking)
+### ==================================================================
+
+### Register a dedicated user for the tracking tests below, so this file can run standalone
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "username": "book-tracker",
+  "password": "supersecret",
+  "email": "book-tracker@example.com"
+}
+
+> {%
+    client.global.set("bookTrackerUserId", response.body.id);
+%}
+
 ### Create a fresh standalone book to track
 POST http://localhost:8080/api/books
 Content-Type: application/json
@@ -241,8 +226,8 @@ Content-Type: application/json
     client.global.set("wayOfKingsBookId", response.body.id);
 %}
 
-### Start tracking the book above for the user created at the top
-POST http://localhost:8080/api/users/{{userId}}/books/{{wayOfKingsBookId}}
+### Start tracking the book above
+POST http://localhost:8080/api/users/{{bookTrackerUserId}}/books/{{wayOfKingsBookId}}
 Content-Type: application/json
 
 {
@@ -253,17 +238,17 @@ Content-Type: application/json
 }
 
 > {%
-    client.global.set("userWorkId", response.body.id);
+    client.global.set("userBookWorkId", response.body.id);
 %}
 
 ### List the READING tab -> should include the tracking record just created
-GET http://localhost:8080/api/users/{{userId}}/user-works?status=READING
+GET http://localhost:8080/api/users/{{bookTrackerUserId}}/user-works?status=READING
 
 ### List the FINISHED tab -> should be empty
-GET http://localhost:8080/api/users/{{userId}}/user-works?status=FINISHED
+GET http://localhost:8080/api/users/{{bookTrackerUserId}}/user-works?status=FINISHED
 
 ### Track the same book again for the same user -> expect 409 (DuplicateTrackingException)
-POST http://localhost:8080/api/users/{{userId}}/books/{{wayOfKingsBookId}}
+POST http://localhost:8080/api/users/{{bookTrackerUserId}}/books/{{wayOfKingsBookId}}
 Content-Type: application/json
 
 {
@@ -282,7 +267,7 @@ Content-Type: application/json
 }
 
 ### Track a book that doesn't exist -> expect 404
-POST http://localhost:8080/api/users/{{userId}}/books/999
+POST http://localhost:8080/api/users/{{bookTrackerUserId}}/books/999
 Content-Type: application/json
 
 {
@@ -290,7 +275,7 @@ Content-Type: application/json
 }
 
 ### Update progress only -> status/rating should stay untouched
-PATCH http://localhost:8080/api/users/{{userId}}/user-works/{{userWorkId}}
+PATCH http://localhost:8080/api/users/{{bookTrackerUserId}}/user-works/{{userBookWorkId}}
 Content-Type: application/json
 
 {
@@ -299,7 +284,7 @@ Content-Type: application/json
 }
 
 ### Update just the rating -> chapter/page from above should be unaffected
-PATCH http://localhost:8080/api/users/{{userId}}/user-works/{{userWorkId}}
+PATCH http://localhost:8080/api/users/{{bookTrackerUserId}}/user-works/{{userBookWorkId}}
 Content-Type: application/json
 
 {
@@ -307,7 +292,7 @@ Content-Type: application/json
 }
 
 ### Update with an out-of-range rating -> expect 400 (validation runs on PATCH too)
-PATCH http://localhost:8080/api/users/{{userId}}/user-works/{{userWorkId}}
+PATCH http://localhost:8080/api/users/{{bookTrackerUserId}}/user-works/{{userBookWorkId}}
 Content-Type: application/json
 
 {
@@ -319,17 +304,17 @@ POST http://localhost:8080/api/users
 Content-Type: application/json
 
 {
-  "username": "otheruser",
+  "username": "book-tracker-2",
   "password": "supersecret",
-  "email": "other@example.com"
+  "email": "book-tracker-2@example.com"
 }
 
 > {%
-    client.global.set("otherUserId", response.body.id);
+    client.global.set("otherBookTrackerUserId", response.body.id);
 %}
 
 ### Try updating user 1's tracking record through user 2's path -> expect 404, not 200
-PATCH http://localhost:8080/api/users/{{otherUserId}}/user-works/{{userWorkId}}
+PATCH http://localhost:8080/api/users/{{otherBookTrackerUserId}}/user-works/{{userBookWorkId}}
 Content-Type: application/json
 
 {
@@ -337,7 +322,7 @@ Content-Type: application/json
 }
 
 ### Update a user-work that doesn't exist -> expect 404
-PATCH http://localhost:8080/api/users/{{userId}}/user-works/999
+PATCH http://localhost:8080/api/users/{{bookTrackerUserId}}/user-works/999
 Content-Type: application/json
 
 {
@@ -345,7 +330,7 @@ Content-Type: application/json
 }
 
 ### Stop tracking -> expect 204
-DELETE http://localhost:8080/api/users/{{userId}}/user-works/{{userWorkId}}
+DELETE http://localhost:8080/api/users/{{bookTrackerUserId}}/user-works/{{userBookWorkId}}
 
 ### Confirm it's gone -> READING tab should be empty again
-GET http://localhost:8080/api/users/{{userId}}/user-works?status=READING
+GET http://localhost:8080/api/users/{{bookTrackerUserId}}/user-works?status=READING

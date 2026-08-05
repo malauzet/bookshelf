@@ -141,7 +141,8 @@ classDiagram
     class ReadingStatus {
         <<enumeration>>
         READING
-        WAITING
+        HIATUS
+        DROPPED
         PLAN_TO_READ
         FINISHED
     }
@@ -183,7 +184,7 @@ classDiagram
 - **`user_id`/`work_id` ne suivent pas `Series` dans cette logique de FK typée** : contrairement à `series_id` (poussé vers chaque sous-classe de `Work`), `work_id` reste sur `UserWork` (le parent) — pousser `work_id` vers `UserBook`/`UserWebnovel`/etc. casserait la contrainte `UNIQUE(user_id, work_id)`, qui a besoin des deux colonnes dans une seule table pour s'exprimer simplement en SQL. Compromis assumé : `UserBook` pourrait en théorie référencer un `Webnovel` sans que le schéma l'empêche — risque jugé moins grave que celui résolu pour `Series`, et la contrainte d'unicité vaut la peine d'être gardée intacte.
 - **`Genre` en `<<enumeration>>`, pas en classe persistée à part** : pas de table de référence dédiée ; côté JPA, `Work.genres` est une `@ElementCollection @Enumerated(EnumType.STRING)`, qui génère une simple table de jonction (`work_genre`) sans entité `Genre` propre. Une table de jonction stocke une ligne par (œuvre, genre) — une œuvre à plusieurs genres n'a donc jamais besoin de concaténer une liste dans une seule colonne.
 - **Cardinalité `Book "0..1" --> "*" BookSeries`** (et équivalent pour les autres formats) : une œuvre est soit standalone (`0` série), soit rattachée à exactement une série de son propre format (`1`) ; une série regroupe potentiellement plusieurs œuvres/tomes de ce même format (`*`).
-- **`ReadingStatus` inchangé** : toujours le même enum (`READING`/`WAITING`/`PLAN_TO_READ`/`FINISHED`, cf. `PROJECT_CONTEXT.md`), seul son propriétaire change (`UserWork` au lieu de `Book`).
+- **`ReadingStatus` inchangé** : toujours le même enum (`READING`/`HIATUS`/`DROPPED`/`PLAN_TO_READ`/`FINISHED`, cf. `PROJECT_CONTEXT.md`), seul son propriétaire change (`UserWork` au lieu de `Book`).
 
 ## 3. Modèle entité-association
 

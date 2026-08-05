@@ -3,12 +3,9 @@ package com.malauzet.bookshelfapi.controller;
 import com.malauzet.bookshelfapi.exception.BookNotFoundException;
 import com.malauzet.bookshelfapi.exception.DuplicateTrackingException;
 import com.malauzet.bookshelfapi.exception.UserNotFoundException;
-import com.malauzet.bookshelfapi.exception.UserWorkNotFoundException;
 import com.malauzet.bookshelfapi.model.Book;
-import com.malauzet.bookshelfapi.model.ReadingStatus;
 import com.malauzet.bookshelfapi.model.User;
 import com.malauzet.bookshelfapi.model.UserBook;
-import com.malauzet.bookshelfapi.model.UserWork;
 import com.malauzet.bookshelfapi.repository.BookRepository;
 import com.malauzet.bookshelfapi.repository.UserBookRepository;
 import com.malauzet.bookshelfapi.repository.UserRepository;
@@ -18,8 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/users/{userId}")
@@ -48,55 +43,6 @@ public class UserBookController {
 
         UserBook saved = userBookRepository.save(userBook);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
-    }
-
-    @GetMapping("/user-works")
-    public ResponseEntity<List<UserWork>> getUserWorksByStatus(@PathVariable Long userId,
-                                                               @RequestParam ReadingStatus status) {
-        User user = getUser(userId);
-
-        return ResponseEntity.ok(userWorkRepository.findByUserAndStatus(user, status));
-    }
-
-    @PatchMapping("/user-works/{id}")
-    public ResponseEntity<UserBook> updateUserWork(@PathVariable Long userId, @PathVariable Long id,
-                                                   @RequestBody @Valid UserBook userBook) {
-
-        UserBook existing = (UserBook) getOwnedUserWork(userId, id);
-
-        if (userBook.getStatus() != null) {
-            existing.setStatus(userBook.getStatus());
-        }
-        if (userBook.getRating() != null) {
-            existing.setRating(userBook.getRating());
-        }
-        if (userBook.getCurrentChapter() != null) {
-            existing.setCurrentChapter(userBook.getCurrentChapter());
-        }
-        if (userBook.getCurrentPage() != null) {
-            existing.setCurrentPage(userBook.getCurrentPage());
-        }
-
-        UserBook updated = userBookRepository.save(existing);
-        return ResponseEntity.ok(updated);
-    }
-
-    @DeleteMapping("/user-works/{id}")
-    public ResponseEntity<Void> deleteUserWork(@PathVariable Long userId, @PathVariable Long id) {
-        UserWork existing = getOwnedUserWork(userId, id);
-        userWorkRepository.delete(existing);
-        return ResponseEntity.noContent().build();
-    }
-
-    private UserWork getOwnedUserWork(Long userId, Long id) {
-        UserWork existing = userWorkRepository.findById(id)
-                .orElseThrow(() -> new UserWorkNotFoundException("User work not found with id: " + id));
-
-        if (!existing.getUser().getId().equals(userId)) {
-            throw new UserWorkNotFoundException("User work not found with id: " + id);
-        }
-
-        return existing;
     }
 
     private User getUser(Long userId) {
