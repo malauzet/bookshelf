@@ -8,8 +8,12 @@ Content-Type: application/json
   "email": "malauzet@example.com"
 }
 
-### Get the user just created (swap 1 for whatever id the register response returned)
-GET http://localhost:8080/api/users/1
+> {%
+    client.global.set("userId", response.body.id);
+%}
+
+### Get the user just created
+GET http://localhost:8080/api/users/{{userId}}
 
 ### Get a user that doesn't exist -> expect 404
 GET http://localhost:8080/api/users/999
@@ -45,17 +49,21 @@ Content-Type: application/json
   "totalVolumes": null
 }
 
+> {%
+    client.global.set("wanderingInnSeriesId", response.body.id);
+%}
+
 ### Get all book series
 GET http://localhost:8080/api/book-series
 
-### Get the series just created (swap 1 for whatever id the create response returned)
-GET http://localhost:8080/api/book-series/1
+### Get the series just created
+GET http://localhost:8080/api/book-series/{{wanderingInnSeriesId}}
 
 ### Get a series that doesn't exist -> expect 404
 GET http://localhost:8080/api/book-series/999
 
-### Update the series (swap 1 for the real id)
-PUT http://localhost:8080/api/book-series/1
+### Update the series
+PUT http://localhost:8080/api/book-series/{{wanderingInnSeriesId}}
 Content-Type: application/json
 
 {
@@ -84,11 +92,11 @@ Content-Type: application/json
   "totalVolumes": 1
 }
 
-### Delete the series (swap 1 for the real id)
-DELETE http://localhost:8080/api/book-series/1
+### Delete the series
+DELETE http://localhost:8080/api/book-series/{{wanderingInnSeriesId}}
 
 ### Get the deleted series -> expect 404
-GET http://localhost:8080/api/book-series/1
+GET http://localhost:8080/api/book-series/{{wanderingInnSeriesId}}
 
 
 ### Create a fresh series for the book tests below
@@ -100,6 +108,10 @@ Content-Type: application/json
   "author": "Brandon Sanderson",
   "totalVolumes": 3
 }
+
+> {%
+    client.global.set("mistbornSeriesId", response.body.id);
+%}
 
 ### Create a standalone book (no series)
 POST http://localhost:8080/api/books
@@ -117,8 +129,12 @@ Content-Type: application/json
   "totalPages": 496
 }
 
-### Create a book attached to the series above (swap seriesId=1 for the real series id)
-POST http://localhost:8080/api/books?seriesId=1
+> {%
+    client.global.set("hailMaryBookId", response.body.id);
+%}
+
+### Create a book attached to the series above
+POST http://localhost:8080/api/books?seriesId={{mistbornSeriesId}}
 Content-Type: application/json
 
 {
@@ -133,14 +149,18 @@ Content-Type: application/json
   "totalPages": 541
 }
 
+> {%
+    client.global.set("finalEmpireBookId", response.body.id);
+%}
+
 ### Get all books
 GET http://localhost:8080/api/books
 
-### Get the standalone book (swap 1 for the real id) -> series should be null
-GET http://localhost:8080/api/books/1
+### Get the standalone book -> series should be null
+GET http://localhost:8080/api/books/{{hailMaryBookId}}
 
-### Get the series-linked book (swap 2 for the real id) -> series should be populated
-GET http://localhost:8080/api/books/2
+### Get the series-linked book -> series should be populated
+GET http://localhost:8080/api/books/{{finalEmpireBookId}}
 
 ### Get a book that doesn't exist -> expect 404
 GET http://localhost:8080/api/books/999
@@ -163,8 +183,8 @@ Content-Type: application/json
   "author": ""
 }
 
-### Update the standalone book, attaching it to the series too (swap both ids)
-PUT http://localhost:8080/api/books/1?seriesId=1
+### Update the standalone book, attaching it to the series too
+PUT http://localhost:8080/api/books/{{hailMaryBookId}}?seriesId={{mistbornSeriesId}}
 Content-Type: application/json
 
 {
@@ -188,17 +208,144 @@ Content-Type: application/json
   "author": "Doesn't matter"
 }
 
-### Try deleting the series while books still reference it -> expect the RESTRICT FK to kick in.
-### This is the case flagged in Slice 2: currently falls through to the generic
-### DataIntegrityViolationException handler, whose message ("a record with these unique
-### constraints already exists") is worded for the duplicate-username case, not this one.
-DELETE http://localhost:8080/api/book-series/1
+### Try deleting the series while books still reference it -> expect the RESTRICT FK to kick in (409)
+DELETE http://localhost:8080/api/book-series/{{mistbornSeriesId}}
 
-### Delete both books (swap ids)
-DELETE http://localhost:8080/api/books/1
+### Delete both books
+DELETE http://localhost:8080/api/books/{{hailMaryBookId}}
 
-### Delete the other book (swap id)
-DELETE http://localhost:8080/api/books/2
+### Delete the other book
+DELETE http://localhost:8080/api/books/{{finalEmpireBookId}}
 
 ### Now nothing references the series -> delete should succeed this time
-DELETE http://localhost:8080/api/book-series/1
+DELETE http://localhost:8080/api/book-series/{{mistbornSeriesId}}
+
+
+### Create a fresh standalone book to track
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{
+  "title": "The Way of Kings",
+  "author": "Brandon Sanderson",
+  "synopsis": "A war-torn world of stone and storms where honor is dying.",
+  "coverImageUrl": null,
+  "publishedDate": "2010-08-31",
+  "totalChapters": 92,
+  "volumeNumber": null,
+  "genres": ["FANTASY"],
+  "totalPages": 1007
+}
+
+> {%
+    client.global.set("wayOfKingsBookId", response.body.id);
+%}
+
+### Start tracking the book above for the user created at the top
+POST http://localhost:8080/api/users/{{userId}}/books/{{wayOfKingsBookId}}
+Content-Type: application/json
+
+{
+  "status": "READING",
+  "rating": null,
+  "currentChapter": 5,
+  "currentPage": 120
+}
+
+> {%
+    client.global.set("userWorkId", response.body.id);
+%}
+
+### List the READING tab -> should include the tracking record just created
+GET http://localhost:8080/api/users/{{userId}}/user-works?status=READING
+
+### List the FINISHED tab -> should be empty
+GET http://localhost:8080/api/users/{{userId}}/user-works?status=FINISHED
+
+### Track the same book again for the same user -> expect 409 (DuplicateTrackingException)
+POST http://localhost:8080/api/users/{{userId}}/books/{{wayOfKingsBookId}}
+Content-Type: application/json
+
+{
+  "status": "READING",
+  "rating": null,
+  "currentChapter": 1,
+  "currentPage": 1
+}
+
+### Track for a user that doesn't exist -> expect 404
+POST http://localhost:8080/api/users/999/books/{{wayOfKingsBookId}}
+Content-Type: application/json
+
+{
+  "status": "PLAN_TO_READ"
+}
+
+### Track a book that doesn't exist -> expect 404
+POST http://localhost:8080/api/users/{{userId}}/books/999
+Content-Type: application/json
+
+{
+  "status": "PLAN_TO_READ"
+}
+
+### Update progress only -> status/rating should stay untouched
+PATCH http://localhost:8080/api/users/{{userId}}/user-works/{{userWorkId}}
+Content-Type: application/json
+
+{
+  "currentChapter": 8,
+  "currentPage": 200
+}
+
+### Update just the rating -> chapter/page from above should be unaffected
+PATCH http://localhost:8080/api/users/{{userId}}/user-works/{{userWorkId}}
+Content-Type: application/json
+
+{
+  "rating": 9
+}
+
+### Update with an out-of-range rating -> expect 400 (validation runs on PATCH too)
+PATCH http://localhost:8080/api/users/{{userId}}/user-works/{{userWorkId}}
+Content-Type: application/json
+
+{
+  "rating": 15
+}
+
+### Register a second user, to test the ownership check
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "username": "otheruser",
+  "password": "supersecret",
+  "email": "other@example.com"
+}
+
+> {%
+    client.global.set("otherUserId", response.body.id);
+%}
+
+### Try updating user 1's tracking record through user 2's path -> expect 404, not 200
+PATCH http://localhost:8080/api/users/{{otherUserId}}/user-works/{{userWorkId}}
+Content-Type: application/json
+
+{
+  "rating": 1
+}
+
+### Update a user-work that doesn't exist -> expect 404
+PATCH http://localhost:8080/api/users/{{userId}}/user-works/999
+Content-Type: application/json
+
+{
+  "rating": 5
+}
+
+### Stop tracking -> expect 204
+DELETE http://localhost:8080/api/users/{{userId}}/user-works/{{userWorkId}}
+
+### Confirm it's gone -> READING tab should be empty again
+GET http://localhost:8080/api/users/{{userId}}/user-works?status=READING

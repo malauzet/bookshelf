@@ -33,8 +33,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
+    @ExceptionHandler(UserWorkNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUserWorkNotFoundException(UserWorkNotFoundException e) {
+        ErrorResponse error = new ErrorResponse(e.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
     @ExceptionHandler(DuplicateUsernameException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateUsernameException(DuplicateUsernameException e) {
+        ErrorResponse error = new ErrorResponse(e.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    @ExceptionHandler(DuplicateTrackingException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateTrackingException(DuplicateTrackingException e) {
         ErrorResponse error = new ErrorResponse(e.getMessage(), null);
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
