@@ -13,9 +13,4 @@ public enum ReadingStatus {
     FINISHED("Finished");
 
     private final String displayName;
-
-    @Override
-    public String toString() {
-        return displayName;
-    }
 }

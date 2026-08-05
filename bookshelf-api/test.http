@@ -89,3 +89,116 @@ DELETE http://localhost:8080/api/book-series/1
 
 ### Get the deleted series -> expect 404
 GET http://localhost:8080/api/book-series/1
+
+
+### Create a fresh series for the book tests below
+POST http://localhost:8080/api/book-series
+Content-Type: application/json
+
+{
+  "name": "Mistborn",
+  "author": "Brandon Sanderson",
+  "totalVolumes": 3
+}
+
+### Create a standalone book (no series)
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{
+  "title": "Project Hail Mary",
+  "author": "Andy Weir",
+  "synopsis": "A lone astronaut must save the earth from disaster.",
+  "coverImageUrl": null,
+  "publishedDate": "2021-05-04",
+  "totalChapters": 46,
+  "volumeNumber": null,
+  "genres": ["SCIENCE_FICTION"],
+  "totalPages": 496
+}
+
+### Create a book attached to the series above (swap seriesId=1 for the real series id)
+POST http://localhost:8080/api/books?seriesId=1
+Content-Type: application/json
+
+{
+  "title": "The Final Empire",
+  "author": "Brandon Sanderson",
+  "synopsis": "A young thief discovers she has the power to overthrow an immortal emperor.",
+  "coverImageUrl": null,
+  "publishedDate": "2006-07-17",
+  "totalChapters": 44,
+  "volumeNumber": 1,
+  "genres": ["FANTASY"],
+  "totalPages": 541
+}
+
+### Get all books
+GET http://localhost:8080/api/books
+
+### Get the standalone book (swap 1 for the real id) -> series should be null
+GET http://localhost:8080/api/books/1
+
+### Get the series-linked book (swap 2 for the real id) -> series should be populated
+GET http://localhost:8080/api/books/2
+
+### Get a book that doesn't exist -> expect 404
+GET http://localhost:8080/api/books/999
+
+### Create a book with a non-existent seriesId -> expect 404 (BookSeriesNotFoundException)
+POST http://localhost:8080/api/books?seriesId=999
+Content-Type: application/json
+
+{
+  "title": "Doesn't matter",
+  "author": "Doesn't matter"
+}
+
+### Create a book with blank title and author -> expect 400 with fieldError map
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{
+  "title": "",
+  "author": ""
+}
+
+### Update the standalone book, attaching it to the series too (swap both ids)
+PUT http://localhost:8080/api/books/1?seriesId=1
+Content-Type: application/json
+
+{
+  "title": "Project Hail Mary",
+  "author": "Andy Weir",
+  "synopsis": "A lone astronaut must save the earth from disaster.",
+  "coverImageUrl": null,
+  "publishedDate": "2021-05-04",
+  "totalChapters": 46,
+  "volumeNumber": 2,
+  "genres": ["SCIENCE_FICTION"],
+  "totalPages": 496
+}
+
+### Update a book that doesn't exist -> expect 404
+PUT http://localhost:8080/api/books/999
+Content-Type: application/json
+
+{
+  "title": "Doesn't matter",
+  "author": "Doesn't matter"
+}
+
+### Try deleting the series while books still reference it -> expect the RESTRICT FK to kick in.
+### This is the case flagged in Slice 2: currently falls through to the generic
+### DataIntegrityViolationException handler, whose message ("a record with these unique
+### constraints already exists") is worded for the duplicate-username case, not this one.
+DELETE http://localhost:8080/api/book-series/1
+
+### Delete both books (swap ids)
+DELETE http://localhost:8080/api/books/1
+
+### Delete the other book (swap id)
+DELETE http://localhost:8080/api/books/2
+
+### Now nothing references the series -> delete should succeed this time
+DELETE http://localhost:8080/api/book-series/1

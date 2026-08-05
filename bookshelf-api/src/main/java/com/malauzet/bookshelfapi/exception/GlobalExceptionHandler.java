@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,6 +23,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BookSeriesNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleBookSeriesNotFoundException(BookSeriesNotFoundException e) {
+        ErrorResponse error = new ErrorResponse(e.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(BookNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleBookNotFoundException(BookNotFoundException e) {
         ErrorResponse error = new ErrorResponse(e.getMessage(), null);
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
@@ -45,10 +52,20 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
-        ErrorResponse error = new ErrorResponse(
-                "A record with these unique constraints already exists",
-                null
-        );
+
+        String sqlState = null;
+
+        Throwable cause = e.getMostSpecificCause();
+
+        if (cause instanceof SQLException sqlException) {
+            sqlState = sqlException.getSQLState();
+        }
+
+        String message = "23503".equals(sqlState)
+                ? "Cannot complete this operation: other records still depend on this resource"
+                : "A record with these unique constraints already exists";
+
+        ErrorResponse error = new ErrorResponse(message, null);
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 }

@@ -59,9 +59,4 @@ public enum Genre {
     LITRPG("LitRPG");
 
     private final String displayName;
-
-    @Override
-    public String toString() {
-        return displayName;
-    }
 }
