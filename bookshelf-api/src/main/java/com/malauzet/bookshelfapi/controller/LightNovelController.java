@@ -27,7 +27,7 @@ public class LightNovelController {
 
         if (seriesId != null) {
             LightNovelSeries series = lightNovelSeriesRepository.findById(seriesId)
-                    .orElseThrow(() -> new LightNovelSeriesNotFoundException("LightNovel series not found with id: " + seriesId));
+                    .orElseThrow(() -> new LightNovelSeriesNotFoundException("Light Novel series not found with id: " + seriesId));
             lightNovel.setSeries(series);
         }
 
@@ -43,7 +43,7 @@ public class LightNovelController {
     @GetMapping("/{id}")
     public ResponseEntity<LightNovel> getLightNovelById(@PathVariable Long id) {
         LightNovel lightNovel = lightNovelRepository.findById(id)
-                .orElseThrow(() -> new LightNovelNotFoundException("LightNovel not found with id: " + id));
+                .orElseThrow(() -> new LightNovelNotFoundException("Light Novel not found with id: " + id));
         return ResponseEntity.ok(lightNovel);
     }
 
@@ -52,7 +52,7 @@ public class LightNovelController {
                                            @RequestBody @Valid LightNovel lightNovel,
                                            @RequestParam(required = false) Long seriesId) {
         LightNovel existing = lightNovelRepository.findById(id)
-                .orElseThrow(() -> new LightNovelNotFoundException("LightNovel not found with id: " + id));
+                .orElseThrow(() -> new LightNovelNotFoundException("Light Novel not found with id: " + id));
 
         existing.setTitle(lightNovel.getTitle());
         existing.setAuthor(lightNovel.getAuthor());
@@ -67,7 +67,7 @@ public class LightNovelController {
 
         if (seriesId != null) {
             LightNovelSeries series = lightNovelSeriesRepository.findById(seriesId)
-                    .orElseThrow(() -> new LightNovelSeriesNotFoundException("LightNovel series not found with id: " + seriesId));
+                    .orElseThrow(() -> new LightNovelSeriesNotFoundException("Light Novel series not found with id: " + seriesId));
             existing.setSeries(series);
         }
 
@@ -78,7 +78,7 @@ public class LightNovelController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteLightNovel(@PathVariable Long id) {
         if (!lightNovelRepository.existsById(id)) {
-            throw new LightNovelNotFoundException("LightNovel not found with id: " + id);
+            throw new LightNovelNotFoundException("Light Novel not found with id: " + id);
         }
         lightNovelRepository.deleteById(id);
         return ResponseEntity.noContent().build();

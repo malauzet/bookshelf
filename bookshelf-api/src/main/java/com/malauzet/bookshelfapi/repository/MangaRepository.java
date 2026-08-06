@@ -3,5 +3,5 @@ package com.malauzet.bookshelfapi.repository;
 import com.malauzet.bookshelfapi.model.Manga;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface MangaRepository extends JpaRepository<Manga,Long> {
+public interface MangaRepository extends JpaRepository<Manga, Long> {
 }
