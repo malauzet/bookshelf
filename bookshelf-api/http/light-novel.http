@@ -1,0 +1,340 @@
+### ==================================================================
+### LIGHT NOVEL SERIES
+### ==================================================================
+
+### Create a light novel series
+POST http://localhost:8080/api/light-novel-series
+Content-Type: application/json
+
+{
+  "name": "Overlord",
+  "author": "Kugane Maruyama",
+  "totalVolumes": null
+}
+
+> {%
+    client.global.set("overlordSeriesId", response.body.id);
+%}
+
+### Get all light novel series
+GET http://localhost:8080/api/light-novel-series
+
+### Get the series just created
+GET http://localhost:8080/api/light-novel-series/{{overlordSeriesId}}
+
+### Get a series that doesn't exist -> expect 404
+GET http://localhost:8080/api/light-novel-series/999
+
+### Update the series
+PUT http://localhost:8080/api/light-novel-series/{{overlordSeriesId}}
+Content-Type: application/json
+
+{
+  "name": "Overlord",
+  "author": "Kugane Maruyama",
+  "totalVolumes": 17
+}
+
+### Update a series that doesn't exist -> expect 404
+PUT http://localhost:8080/api/light-novel-series/999
+Content-Type: application/json
+
+{
+  "name": "Doesn't matter",
+  "author": "Doesn't matter",
+  "totalVolumes": 1
+}
+
+### Create with blank name and author -> expect 400 with fieldError map
+POST http://localhost:8080/api/light-novel-series
+Content-Type: application/json
+
+{
+  "name": "",
+  "author": "",
+  "totalVolumes": 1
+}
+
+### Delete the series
+DELETE http://localhost:8080/api/light-novel-series/{{overlordSeriesId}}
+
+### Get the deleted series -> expect 404
+GET http://localhost:8080/api/light-novel-series/{{overlordSeriesId}}
+
+
+### ==================================================================
+### LIGHT NOVEL
+### ==================================================================
+
+### Create a fresh series for the light novel tests below
+POST http://localhost:8080/api/light-novel-series
+Content-Type: application/json
+
+{
+  "name": "Re:Zero − Starting Life in Another World",
+  "author": "Tappei Nagatsuki",
+  "totalVolumes": 34
+}
+
+> {%
+    client.global.set("rezeroSeriesId", response.body.id);
+%}
+
+### Create a standalone light novel (no series)
+POST http://localhost:8080/api/light-novels
+Content-Type: application/json
+
+{
+  "title": "Konosuba: God's Blessing on This Wonderful World!, Vol. 1",
+  "author": "Natsume Akatsuki",
+  "synopsis": "A shut-in gamer dies and is reincarnated into a fantasy world with a useless goddess.",
+  "coverImageUrl": null,
+  "publishedDate": "2013-08-09",
+  "totalChapters": 6,
+  "volumeNumber": null,
+  "genres": ["ISEKAI", "COMEDY"],
+  "artist": "Kurone Mishima",
+  "totalPages": 216
+}
+
+> {%
+    client.global.set("konosubaLightNovelId", response.body.id);
+%}
+
+### Create a light novel attached to the series above
+POST http://localhost:8080/api/light-novels?seriesId={{rezeroSeriesId}}
+Content-Type: application/json
+
+{
+  "title": "Re:Zero, Vol. 1: Chapter 1 - A Day in the Capital",
+  "author": "Tappei Nagatsuki",
+  "synopsis": "Subaru Natsuki is transported to a fantasy world and gains the power to rewind death.",
+  "coverImageUrl": null,
+  "publishedDate": "2014-01-24",
+  "totalChapters": 8,
+  "volumeNumber": 1,
+  "genres": ["ISEKAI", "FANTASY"],
+  "artist": "Shinichirou Otsuka",
+  "totalPages": 232
+}
+
+> {%
+    client.global.set("rezeroLightNovelId", response.body.id);
+%}
+
+### Get all light novels
+GET http://localhost:8080/api/light-novels
+
+### Get the standalone light novel -> series should be null
+GET http://localhost:8080/api/light-novels/{{konosubaLightNovelId}}
+
+### Get the series-linked light novel -> series should be populated
+GET http://localhost:8080/api/light-novels/{{rezeroLightNovelId}}
+
+### Get a light novel that doesn't exist -> expect 404
+GET http://localhost:8080/api/light-novels/999
+
+### Create a light novel with a non-existent seriesId -> expect 404 (LightNovelSeriesNotFoundException)
+POST http://localhost:8080/api/light-novels?seriesId=999
+Content-Type: application/json
+
+{
+  "title": "Doesn't matter",
+  "author": "Doesn't matter"
+}
+
+### Create a light novel with blank title and author -> expect 400 with fieldError map
+POST http://localhost:8080/api/light-novels
+Content-Type: application/json
+
+{
+  "title": "",
+  "author": ""
+}
+
+### Update the standalone light novel, attaching it to the series too
+PUT http://localhost:8080/api/light-novels/{{konosubaLightNovelId}}?seriesId={{rezeroSeriesId}}
+Content-Type: application/json
+
+{
+  "title": "Konosuba: God's Blessing on This Wonderful World!, Vol. 1",
+  "author": "Natsume Akatsuki",
+  "synopsis": "A shut-in gamer dies and is reincarnated into a fantasy world with a useless goddess.",
+  "coverImageUrl": null,
+  "publishedDate": "2013-08-09",
+  "totalChapters": 6,
+  "volumeNumber": 2,
+  "genres": ["ISEKAI", "COMEDY"],
+  "artist": "Kurone Mishima",
+  "totalPages": 216
+}
+
+### Update a light novel that doesn't exist -> expect 404
+PUT http://localhost:8080/api/light-novels/999
+Content-Type: application/json
+
+{
+  "title": "Doesn't matter",
+  "author": "Doesn't matter"
+}
+
+### Try deleting the series while light novels still reference it -> expect the RESTRICT FK to kick in (409)
+DELETE http://localhost:8080/api/light-novel-series/{{rezeroSeriesId}}
+
+### Delete both light novels
+DELETE http://localhost:8080/api/light-novels/{{konosubaLightNovelId}}
+
+### Delete the other light novel
+DELETE http://localhost:8080/api/light-novels/{{rezeroLightNovelId}}
+
+### Now nothing references the series -> delete should succeed this time
+DELETE http://localhost:8080/api/light-novel-series/{{rezeroSeriesId}}
+
+
+### ==================================================================
+### USER LIGHT NOVEL (tracking)
+### ==================================================================
+
+### Register a dedicated user for the tracking tests below, so this file can run standalone
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "username": "light-novel-tracker",
+  "password": "supersecret",
+  "email": "light-novel-tracker@example.com"
+}
+
+> {%
+    client.global.set("lightNovelTrackerUserId", response.body.id);
+%}
+
+### Create a fresh standalone light novel to track
+POST http://localhost:8080/api/light-novels
+Content-Type: application/json
+
+{
+  "title": "Mushoku Tensei: Jobless Reincarnation, Vol. 1",
+  "author": "Rifujin na Magonote",
+  "synopsis": "A jobless 34-year-old dies in shame and is reincarnated into a fantasy world as an infant.",
+  "coverImageUrl": null,
+  "publishedDate": "2014-01-25",
+  "totalChapters": 7,
+  "volumeNumber": null,
+  "genres": ["ISEKAI", "FANTASY"],
+  "artist": "Shirotaka",
+  "totalPages": 280
+}
+
+> {%
+    client.global.set("mushokuTenseiLightNovelId", response.body.id);
+%}
+
+### Start tracking the light novel above
+POST http://localhost:8080/api/users/{{lightNovelTrackerUserId}}/light-novels/{{mushokuTenseiLightNovelId}}
+Content-Type: application/json
+
+{
+  "status": "READING",
+  "rating": null,
+  "currentChapter": 3,
+  "currentPage": 80
+}
+
+> {%
+    client.global.set("userLightNovelWorkId", response.body.id);
+%}
+
+### List the READING tab -> should include the tracking record just created
+GET http://localhost:8080/api/users/{{lightNovelTrackerUserId}}/user-works?status=READING
+
+### List the FINISHED tab -> should be empty
+GET http://localhost:8080/api/users/{{lightNovelTrackerUserId}}/user-works?status=FINISHED
+
+### Track the same light novel again for the same user -> expect 409 (DuplicateTrackingException)
+POST http://localhost:8080/api/users/{{lightNovelTrackerUserId}}/light-novels/{{mushokuTenseiLightNovelId}}
+Content-Type: application/json
+
+{
+  "status": "READING",
+  "rating": null,
+  "currentChapter": 1,
+  "currentPage": 1
+}
+
+### Track for a user that doesn't exist -> expect 404
+POST http://localhost:8080/api/users/999/light-novels/{{mushokuTenseiLightNovelId}}
+Content-Type: application/json
+
+{
+  "status": "PLAN_TO_READ"
+}
+
+### Track a light novel that doesn't exist -> expect 404
+POST http://localhost:8080/api/users/{{lightNovelTrackerUserId}}/light-novels/999
+Content-Type: application/json
+
+{
+  "status": "PLAN_TO_READ"
+}
+
+### Update progress only -> status/rating should stay untouched
+PATCH http://localhost:8080/api/users/{{lightNovelTrackerUserId}}/user-works/{{userLightNovelWorkId}}
+Content-Type: application/json
+
+{
+  "currentChapter": 5,
+  "currentPage": 150
+}
+
+### Update just the rating -> chapter/page from above should be unaffected
+PATCH http://localhost:8080/api/users/{{lightNovelTrackerUserId}}/user-works/{{userLightNovelWorkId}}
+Content-Type: application/json
+
+{
+  "rating": 8
+}
+
+### Update with an out-of-range rating -> expect 400 (validation runs on PATCH too)
+PATCH http://localhost:8080/api/users/{{lightNovelTrackerUserId}}/user-works/{{userLightNovelWorkId}}
+Content-Type: application/json
+
+{
+  "rating": 15
+}
+
+### Register a second user, to test the ownership check
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "username": "light-novel-tracker-2",
+  "password": "supersecret",
+  "email": "light-novel-tracker-2@example.com"
+}
+
+> {%
+    client.global.set("otherLightNovelTrackerUserId", response.body.id);
+%}
+
+### Try updating user 1's tracking record through user 2's path -> expect 404, not 200
+PATCH http://localhost:8080/api/users/{{otherLightNovelTrackerUserId}}/user-works/{{userLightNovelWorkId}}
+Content-Type: application/json
+
+{
+  "rating": 1
+}
+
+### Update a user-work that doesn't exist -> expect 404
+PATCH http://localhost:8080/api/users/{{lightNovelTrackerUserId}}/user-works/999
+Content-Type: application/json
+
+{
+  "rating": 5
+}
+
+### Stop tracking -> expect 204
+DELETE http://localhost:8080/api/users/{{lightNovelTrackerUserId}}/user-works/{{userLightNovelWorkId}}
+
+### Confirm it's gone -> READING tab should be empty again
+GET http://localhost:8080/api/users/{{lightNovelTrackerUserId}}/user-works?status=READING

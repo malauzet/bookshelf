@@ -33,6 +33,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
+    @ExceptionHandler(LightNovelSeriesNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleLightNovelSeriesNotFoundException(LightNovelSeriesNotFoundException e) {
+        ErrorResponse error = new ErrorResponse(e.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
     @ExceptionHandler(BookNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleBookNotFoundException(BookNotFoundException e) {
         ErrorResponse error = new ErrorResponse(e.getMessage(), null);
@@ -41,6 +47,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(WebnovelNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleWebnovelNotFoundException(WebnovelNotFoundException e) {
+        ErrorResponse error = new ErrorResponse(e.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(LightNovelNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleLightNovelNotFoundException(LightNovelNotFoundException e) {
         ErrorResponse error = new ErrorResponse(e.getMessage(), null);
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
