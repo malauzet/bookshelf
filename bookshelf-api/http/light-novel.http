@@ -25,13 +25,15 @@ GET http://localhost:8080/api/light-novel-series/{{overlordSeriesId}}
 ### Get a series that doesn't exist -> expect 404
 GET http://localhost:8080/api/light-novel-series/999
 
-### Update the series
+### Update the series -> every field changed from creation, not just totalVolumes, to actually exercise
+### every setter (see the missing setArtist bug caught on this same vertical: a PUT test that reuses
+### creation-time values can pass even though a setter is silently broken)
 PUT http://localhost:8080/api/light-novel-series/{{overlordSeriesId}}
 Content-Type: application/json
 
 {
-  "name": "Overlord",
-  "author": "Kugane Maruyama",
+  "name": "Overlord (edited)",
+  "author": "Kugane Maruyama (edited)",
   "totalVolumes": 17
 }
 
@@ -152,21 +154,24 @@ Content-Type: application/json
   "author": ""
 }
 
-### Update the standalone light novel, attaching it to the series too -> artist deliberately changed from creation, to actually exercise setArtist (a missing setter here previously passed silently since every PUT test reused the same value)
+### Update the standalone light novel, attaching it to the series too -> every field deliberately changed
+### from creation (not just artist/volumeNumber), to actually exercise every setter (the missing setArtist
+### bug on this vertical previously passed silently since every PUT test reused the same value for
+### everything else too)
 PUT http://localhost:8080/api/light-novels/{{konosubaLightNovelId}}?seriesId={{rezeroSeriesId}}
 Content-Type: application/json
 
 {
-  "title": "Konosuba: God's Blessing on This Wonderful World!, Vol. 1",
-  "author": "Natsume Akatsuki",
-  "synopsis": "A shut-in gamer dies and is reincarnated into a fantasy world with a useless goddess.",
-  "coverImageUrl": null,
-  "publishedDate": "2013-08-09",
-  "totalChapters": 6,
+  "title": "Konosuba: God's Blessing on This Wonderful World!, Vol. 1 (edited)",
+  "author": "Natsume Akatsuki (edited)",
+  "synopsis": "A shut-in gamer dies in an accident and is reincarnated into a fantasy world with a useless goddess.",
+  "coverImageUrl": "https://covers.example.com/konosuba-vol1.jpg",
+  "publishedDate": "2013-08-16",
+  "totalChapters": 7,
   "volumeNumber": 2,
-  "genres": ["ISEKAI", "COMEDY"],
+  "genres": ["ISEKAI", "COMEDY", "PARANORMAL"],
   "artist": "Masahito Watari",
-  "totalPages": 216
+  "totalPages": 220
 }
 
 ### Update a light novel that doesn't exist -> expect 404
@@ -293,6 +298,15 @@ Content-Type: application/json
 
 {
   "rating": 8
+}
+
+### Update the status -> currentChapter/currentPage/rating from above should be unaffected; also the first
+### test in this file to actually exercise UserWorkController applying request.status()
+PATCH http://localhost:8080/api/users/{{lightNovelTrackerUserId}}/user-works/{{userLightNovelWorkId}}
+Content-Type: application/json
+
+{
+  "status": "FINISHED"
 }
 
 ### Update with an out-of-range rating -> expect 400 (validation runs on PATCH too)

@@ -25,13 +25,15 @@ GET http://localhost:8080/api/webnovel-series/{{mothOfLearningSeriesId}}
 ### Get a series that doesn't exist -> expect 404
 GET http://localhost:8080/api/webnovel-series/999
 
-### Update the series
+### Update the series -> every field changed from creation, not just totalVolumes, to actually exercise
+### every setter (see the missing setArtist bug caught on the LightNovel vertical: a PUT test that reuses
+### creation-time values can pass even though a setter is silently broken)
 PUT http://localhost:8080/api/webnovel-series/{{mothOfLearningSeriesId}}
 Content-Type: application/json
 
 {
-  "name": "Mother of Learning",
-  "author": "nobody103",
+  "name": "Mother of Learning (edited)",
+  "author": "nobody103 (edited)",
   "totalVolumes": 1
 }
 
@@ -148,19 +150,22 @@ Content-Type: application/json
   "author": ""
 }
 
-### Update the standalone webnovel, attaching it to the series too
+### Update the standalone webnovel, attaching it to the series too -> every field deliberately changed from
+### creation (not just volumeNumber), to actually exercise every setter (see the missing setArtist bug
+### caught on the LightNovel vertical: a PUT test that reuses creation-time values can pass even though a
+### setter is silently broken)
 PUT http://localhost:8080/api/webnovels/{{wormWebnovelId}}?seriesId={{bewareOfChickenSeriesId}}
 Content-Type: application/json
 
 {
-  "title": "Worm",
-  "author": "Wildbow",
-  "synopsis": "A girl with the power to control insects gets drawn into a world of superhumans.",
-  "coverImageUrl": null,
-  "publishedDate": "2011-06-11",
-  "totalChapters": 300,
+  "title": "Worm (edited)",
+  "author": "Wildbow (edited)",
+  "synopsis": "A girl with the power to control insects and bugs gets drawn into a world of superhumans.",
+  "coverImageUrl": "https://covers.example.com/worm.jpg",
+  "publishedDate": "2011-06-18",
+  "totalChapters": 305,
   "volumeNumber": 2,
-  "genres": ["SUPERNATURAL", "URBAN_FANTASY"]
+  "genres": ["SUPERNATURAL", "URBAN_FANTASY", "PSYCHOLOGICAL"]
 }
 
 ### Update a webnovel that doesn't exist -> expect 404
@@ -282,6 +287,15 @@ Content-Type: application/json
 
 {
   "rating": 10
+}
+
+### Update the status -> currentChapter/rating from above should be unaffected; also the first test in this
+### file to actually exercise UserWorkController applying request.status()
+PATCH http://localhost:8080/api/users/{{webnovelTrackerUserId}}/user-works/{{userWebnovelWorkId}}
+Content-Type: application/json
+
+{
+  "status": "FINISHED"
 }
 
 ### Update with an out-of-range rating -> expect 400 (validation runs on PATCH too)

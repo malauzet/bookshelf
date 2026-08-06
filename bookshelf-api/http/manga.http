@@ -25,13 +25,15 @@ GET http://localhost:8080/api/manga-series/{{berserkSeriesId}}
 ### Get a series that doesn't exist -> expect 404
 GET http://localhost:8080/api/manga-series/999
 
-### Update the series
+### Update the series -> every field changed from creation, not just totalVolumes, to actually exercise
+### every setter (see the missing setArtist bug caught on the LightNovel vertical: a PUT test that reuses
+### creation-time values can pass even though a setter is silently broken)
 PUT http://localhost:8080/api/manga-series/{{berserkSeriesId}}
 Content-Type: application/json
 
 {
-  "name": "Berserk",
-  "author": "Kentaro Miura",
+  "name": "Berserk (edited)",
+  "author": "Kentaro Miura (edited)",
   "totalVolumes": 41
 }
 
@@ -152,19 +154,22 @@ Content-Type: application/json
   "author": ""
 }
 
-### Update the standalone manga, attaching it to the series too -> artist/totalPages/volumeNumber deliberately changed from creation, to actually exercise every setter (see the missing setArtist bug caught on the LightNovel vertical)
+### Update the standalone manga, attaching it to the series too -> every field deliberately changed from
+### creation (not just artist/totalPages/volumeNumber), to actually exercise every setter (see the missing
+### setArtist bug caught on the LightNovel vertical: a PUT test that reuses creation-time values can pass
+### even though a setter is silently broken)
 PUT http://localhost:8080/api/mangas/{{soloLevelingMangaId}}?seriesId={{vinlandSagaSeriesId}}
 Content-Type: application/json
 
 {
-  "title": "Solo Leveling, Vol. 1",
-  "author": "Chugong",
-  "synopsis": "The weakest hunter in the world gains the power to level up without limit.",
-  "coverImageUrl": null,
-  "publishedDate": "2018-03-04",
-  "totalChapters": 5,
+  "title": "Solo Leveling, Vol. 1 (edited)",
+  "author": "Chugong (edited)",
+  "synopsis": "The weakest hunter in the world gains a mysterious power to level up without limit.",
+  "coverImageUrl": "https://covers.example.com/solo-leveling-vol1.jpg",
+  "publishedDate": "2018-03-11",
+  "totalChapters": 6,
   "volumeNumber": 2,
-  "genres": ["ISEKAI", "FANTASY"],
+  "genres": ["ISEKAI", "FANTASY", "ACTION"],
   "artist": "Jang Sung-rak",
   "totalPages": 200
 }
@@ -293,6 +298,15 @@ Content-Type: application/json
 
 {
   "rating": 9
+}
+
+### Update the status -> currentChapter/currentPage/rating from above should be unaffected; also the first
+### test in this file to actually exercise UserWorkController applying request.status()
+PATCH http://localhost:8080/api/users/{{mangaTrackerUserId}}/user-works/{{userMangaWorkId}}
+Content-Type: application/json
+
+{
+  "status": "FINISHED"
 }
 
 ### Update with an out-of-range rating -> expect 400 (validation runs on PATCH too)

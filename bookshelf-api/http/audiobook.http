@@ -25,13 +25,15 @@ GET http://localhost:8080/api/audiobook-series/{{wheelOfTimeSeriesId}}
 ### Get a series that doesn't exist -> expect 404
 GET http://localhost:8080/api/audiobook-series/999
 
-### Update the series
+### Update the series -> every field changed from creation, not just totalVolumes, to actually exercise
+### every setter (see the missing setArtist bug caught on the LightNovel vertical: a PUT test that reuses
+### creation-time values can pass even though a setter is silently broken)
 PUT http://localhost:8080/api/audiobook-series/{{wheelOfTimeSeriesId}}
 Content-Type: application/json
 
 {
-  "name": "The Wheel of Time",
-  "author": "Robert Jordan",
+  "name": "The Wheel of Time (edited)",
+  "author": "Robert Jordan (edited)",
   "totalVolumes": 14
 }
 
@@ -152,19 +154,22 @@ Content-Type: application/json
   "author": ""
 }
 
-### Update the standalone audiobook, attaching it to the series too -> narrator/totalMinutes/volumeNumber deliberately changed from creation, to actually exercise every setter (see the missing setArtist bug caught on the LightNovel vertical)
+### Update the standalone audiobook, attaching it to the series too -> every field deliberately changed from
+### creation (not just narrator/totalMinutes/volumeNumber), to actually exercise every setter (see the
+### missing setArtist bug caught on the LightNovel vertical: a PUT test that reuses creation-time values can
+### pass even though a setter is silently broken)
 PUT http://localhost:8080/api/audiobooks/{{hailMaryAudiobookId}}?seriesId={{mistbornSeriesId}}
 Content-Type: application/json
 
 {
-  "title": "Project Hail Mary",
-  "author": "Andy Weir",
-  "synopsis": "A lone astronaut must save the earth from disaster.",
-  "coverImageUrl": null,
-  "publishedDate": "2021-05-04",
-  "totalChapters": 46,
+  "title": "Project Hail Mary (edited)",
+  "author": "Andy Weir (edited)",
+  "synopsis": "A lone astronaut wakes up with no memory and must save the earth from disaster.",
+  "coverImageUrl": "https://covers.example.com/project-hail-mary-audio.jpg",
+  "publishedDate": "2021-05-11",
+  "totalChapters": 48,
   "volumeNumber": 2,
-  "genres": ["SCIENCE_FICTION"],
+  "genres": ["SCIENCE_FICTION", "SURVIVAL"],
   "narrator": "George Newbern",
   "totalMinutes": 985
 }
@@ -293,6 +298,15 @@ Content-Type: application/json
 
 {
   "rating": 9
+}
+
+### Update the status -> currentChapter/currentMinutes/rating from above should be unaffected; also the
+### first test in this file to actually exercise UserWorkController applying request.status()
+PATCH http://localhost:8080/api/users/{{audiobookTrackerUserId}}/user-works/{{userAudiobookWorkId}}
+Content-Type: application/json
+
+{
+  "status": "FINISHED"
 }
 
 ### Update with an out-of-range rating -> expect 400 (validation runs on PATCH too)
