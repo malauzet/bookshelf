@@ -128,4 +128,10 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(message, null);
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleUnexpectedException(Exception e) {
+        ErrorResponse error = new ErrorResponse("An unexpected error occurred", null);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
 }
