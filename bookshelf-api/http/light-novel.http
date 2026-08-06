@@ -152,7 +152,7 @@ Content-Type: application/json
   "author": ""
 }
 
-### Update the standalone light novel, attaching it to the series too
+### Update the standalone light novel, attaching it to the series too -> artist deliberately changed from creation, to actually exercise setArtist (a missing setter here previously passed silently since every PUT test reused the same value)
 PUT http://localhost:8080/api/light-novels/{{konosubaLightNovelId}}?seriesId={{rezeroSeriesId}}
 Content-Type: application/json
 
@@ -165,7 +165,7 @@ Content-Type: application/json
   "totalChapters": 6,
   "volumeNumber": 2,
   "genres": ["ISEKAI", "COMEDY"],
-  "artist": "Kurone Mishima",
+  "artist": "Masahito Watari",
   "totalPages": 216
 }
 

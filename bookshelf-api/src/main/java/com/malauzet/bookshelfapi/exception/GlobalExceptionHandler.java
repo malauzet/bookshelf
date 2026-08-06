@@ -39,6 +39,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
+    @ExceptionHandler(MangaSeriesNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleMangaSeriesNotFoundException(MangaSeriesNotFoundException e) {
+        ErrorResponse error = new ErrorResponse(e.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
     @ExceptionHandler(BookNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleBookNotFoundException(BookNotFoundException e) {
         ErrorResponse error = new ErrorResponse(e.getMessage(), null);
@@ -53,6 +59,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(LightNovelNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleLightNovelNotFoundException(LightNovelNotFoundException e) {
+        ErrorResponse error = new ErrorResponse(e.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(MangaNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleMangaNotFoundException(MangaNotFoundException e) {
         ErrorResponse error = new ErrorResponse(e.getMessage(), null);
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }

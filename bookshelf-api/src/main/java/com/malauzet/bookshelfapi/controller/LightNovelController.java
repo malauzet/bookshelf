@@ -63,6 +63,7 @@ public class LightNovelController {
         existing.setVolumeNumber(lightNovel.getVolumeNumber());
         existing.setGenres(lightNovel.getGenres());
         existing.setTotalPages(lightNovel.getTotalPages());
+        existing.setArtist(lightNovel.getArtist());
 
         if (seriesId != null) {
             LightNovelSeries series = lightNovelSeriesRepository.findById(seriesId)

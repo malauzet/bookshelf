@@ -1,0 +1,340 @@
+### ==================================================================
+### MANGA SERIES
+### ==================================================================
+
+### Create a manga series
+POST http://localhost:8080/api/manga-series
+Content-Type: application/json
+
+{
+  "name": "Berserk",
+  "author": "Kentaro Miura",
+  "totalVolumes": null
+}
+
+> {%
+    client.global.set("berserkSeriesId", response.body.id);
+%}
+
+### Get all manga series
+GET http://localhost:8080/api/manga-series
+
+### Get the series just created
+GET http://localhost:8080/api/manga-series/{{berserkSeriesId}}
+
+### Get a series that doesn't exist -> expect 404
+GET http://localhost:8080/api/manga-series/999
+
+### Update the series
+PUT http://localhost:8080/api/manga-series/{{berserkSeriesId}}
+Content-Type: application/json
+
+{
+  "name": "Berserk",
+  "author": "Kentaro Miura",
+  "totalVolumes": 41
+}
+
+### Update a series that doesn't exist -> expect 404
+PUT http://localhost:8080/api/manga-series/999
+Content-Type: application/json
+
+{
+  "name": "Doesn't matter",
+  "author": "Doesn't matter",
+  "totalVolumes": 1
+}
+
+### Create with blank name and author -> expect 400 with fieldError map
+POST http://localhost:8080/api/manga-series
+Content-Type: application/json
+
+{
+  "name": "",
+  "author": "",
+  "totalVolumes": 1
+}
+
+### Delete the series
+DELETE http://localhost:8080/api/manga-series/{{berserkSeriesId}}
+
+### Get the deleted series -> expect 404
+GET http://localhost:8080/api/manga-series/{{berserkSeriesId}}
+
+
+### ==================================================================
+### MANGA
+### ==================================================================
+
+### Create a fresh series for the manga tests below
+POST http://localhost:8080/api/manga-series
+Content-Type: application/json
+
+{
+  "name": "Vinland Saga",
+  "author": "Makoto Yukimura",
+  "totalVolumes": 27
+}
+
+> {%
+    client.global.set("vinlandSagaSeriesId", response.body.id);
+%}
+
+### Create a standalone manga (no series)
+POST http://localhost:8080/api/mangas
+Content-Type: application/json
+
+{
+  "title": "Solo Leveling, Vol. 1",
+  "author": "Chugong",
+  "synopsis": "The weakest hunter in the world gains the power to level up without limit.",
+  "coverImageUrl": null,
+  "publishedDate": "2018-03-04",
+  "totalChapters": 5,
+  "volumeNumber": null,
+  "genres": ["ISEKAI", "FANTASY"],
+  "artist": "Dubu (REDICE STUDIO)",
+  "totalPages": 192
+}
+
+> {%
+    client.global.set("soloLevelingMangaId", response.body.id);
+%}
+
+### Create a manga attached to the series above
+POST http://localhost:8080/api/mangas?seriesId={{vinlandSagaSeriesId}}
+Content-Type: application/json
+
+{
+  "title": "Vinland Saga, Vol. 1",
+  "author": "Makoto Yukimura",
+  "synopsis": "A young Viking seeks revenge against the mercenary who killed his father.",
+  "coverImageUrl": null,
+  "publishedDate": "2013-11-12",
+  "totalChapters": 6,
+  "volumeNumber": 1,
+  "genres": ["FANTASY"],
+  "artist": "Makoto Yukimura",
+  "totalPages": 424
+}
+
+> {%
+    client.global.set("vinlandSagaMangaId", response.body.id);
+%}
+
+### Get all mangas
+GET http://localhost:8080/api/mangas
+
+### Get the standalone manga -> series should be null
+GET http://localhost:8080/api/mangas/{{soloLevelingMangaId}}
+
+### Get the series-linked manga -> series should be populated
+GET http://localhost:8080/api/mangas/{{vinlandSagaMangaId}}
+
+### Get a manga that doesn't exist -> expect 404
+GET http://localhost:8080/api/mangas/999
+
+### Create a manga with a non-existent seriesId -> expect 404 (MangaSeriesNotFoundException)
+POST http://localhost:8080/api/mangas?seriesId=999
+Content-Type: application/json
+
+{
+  "title": "Doesn't matter",
+  "author": "Doesn't matter"
+}
+
+### Create a manga with blank title and author -> expect 400 with fieldError map
+POST http://localhost:8080/api/mangas
+Content-Type: application/json
+
+{
+  "title": "",
+  "author": ""
+}
+
+### Update the standalone manga, attaching it to the series too -> artist/totalPages/volumeNumber deliberately changed from creation, to actually exercise every setter (see the missing setArtist bug caught on the LightNovel vertical)
+PUT http://localhost:8080/api/mangas/{{soloLevelingMangaId}}?seriesId={{vinlandSagaSeriesId}}
+Content-Type: application/json
+
+{
+  "title": "Solo Leveling, Vol. 1",
+  "author": "Chugong",
+  "synopsis": "The weakest hunter in the world gains the power to level up without limit.",
+  "coverImageUrl": null,
+  "publishedDate": "2018-03-04",
+  "totalChapters": 5,
+  "volumeNumber": 2,
+  "genres": ["ISEKAI", "FANTASY"],
+  "artist": "Jang Sung-rak",
+  "totalPages": 200
+}
+
+### Update a manga that doesn't exist -> expect 404
+PUT http://localhost:8080/api/mangas/999
+Content-Type: application/json
+
+{
+  "title": "Doesn't matter",
+  "author": "Doesn't matter"
+}
+
+### Try deleting the series while mangas still reference it -> expect the RESTRICT FK to kick in (409)
+DELETE http://localhost:8080/api/manga-series/{{vinlandSagaSeriesId}}
+
+### Delete both mangas
+DELETE http://localhost:8080/api/mangas/{{soloLevelingMangaId}}
+
+### Delete the other manga
+DELETE http://localhost:8080/api/mangas/{{vinlandSagaMangaId}}
+
+### Now nothing references the series -> delete should succeed this time
+DELETE http://localhost:8080/api/manga-series/{{vinlandSagaSeriesId}}
+
+
+### ==================================================================
+### USER MANGA (tracking)
+### ==================================================================
+
+### Register a dedicated user for the tracking tests below, so this file can run standalone
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "username": "manga-tracker",
+  "password": "supersecret",
+  "email": "manga-tracker@example.com"
+}
+
+> {%
+    client.global.set("mangaTrackerUserId", response.body.id);
+%}
+
+### Create a fresh standalone manga to track
+POST http://localhost:8080/api/mangas
+Content-Type: application/json
+
+{
+  "title": "One Piece, Vol. 1",
+  "author": "Eiichiro Oda",
+  "synopsis": "A boy with rubber powers sets out to become the King of the Pirates.",
+  "coverImageUrl": null,
+  "publishedDate": "1997-12-24",
+  "totalChapters": 8,
+  "volumeNumber": null,
+  "genres": ["FANTASY", "MARTIAL_ARTS"],
+  "artist": "Eiichiro Oda",
+  "totalPages": 208
+}
+
+> {%
+    client.global.set("onePieceMangaId", response.body.id);
+%}
+
+### Start tracking the manga above
+POST http://localhost:8080/api/users/{{mangaTrackerUserId}}/mangas/{{onePieceMangaId}}
+Content-Type: application/json
+
+{
+  "status": "READING",
+  "rating": null,
+  "currentChapter": 4,
+  "currentPage": 90
+}
+
+> {%
+    client.global.set("userMangaWorkId", response.body.id);
+%}
+
+### List the READING tab -> should include the tracking record just created
+GET http://localhost:8080/api/users/{{mangaTrackerUserId}}/user-works?status=READING
+
+### List the FINISHED tab -> should be empty
+GET http://localhost:8080/api/users/{{mangaTrackerUserId}}/user-works?status=FINISHED
+
+### Track the same manga again for the same user -> expect 409 (DuplicateTrackingException)
+POST http://localhost:8080/api/users/{{mangaTrackerUserId}}/mangas/{{onePieceMangaId}}
+Content-Type: application/json
+
+{
+  "status": "READING",
+  "rating": null,
+  "currentChapter": 1,
+  "currentPage": 1
+}
+
+### Track for a user that doesn't exist -> expect 404
+POST http://localhost:8080/api/users/999/mangas/{{onePieceMangaId}}
+Content-Type: application/json
+
+{
+  "status": "PLAN_TO_READ"
+}
+
+### Track a manga that doesn't exist -> expect 404
+POST http://localhost:8080/api/users/{{mangaTrackerUserId}}/mangas/999
+Content-Type: application/json
+
+{
+  "status": "PLAN_TO_READ"
+}
+
+### Update progress only -> status/rating should stay untouched
+PATCH http://localhost:8080/api/users/{{mangaTrackerUserId}}/user-works/{{userMangaWorkId}}
+Content-Type: application/json
+
+{
+  "currentChapter": 6,
+  "currentPage": 140
+}
+
+### Update just the rating -> chapter/page from above should be unaffected
+PATCH http://localhost:8080/api/users/{{mangaTrackerUserId}}/user-works/{{userMangaWorkId}}
+Content-Type: application/json
+
+{
+  "rating": 9
+}
+
+### Update with an out-of-range rating -> expect 400 (validation runs on PATCH too)
+PATCH http://localhost:8080/api/users/{{mangaTrackerUserId}}/user-works/{{userMangaWorkId}}
+Content-Type: application/json
+
+{
+  "rating": 15
+}
+
+### Register a second user, to test the ownership check
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "username": "manga-tracker-2",
+  "password": "supersecret",
+  "email": "manga-tracker-2@example.com"
+}
+
+> {%
+    client.global.set("otherMangaTrackerUserId", response.body.id);
+%}
+
+### Try updating user 1's tracking record through user 2's path -> expect 404, not 200
+PATCH http://localhost:8080/api/users/{{otherMangaTrackerUserId}}/user-works/{{userMangaWorkId}}
+Content-Type: application/json
+
+{
+  "rating": 1
+}
+
+### Update a user-work that doesn't exist -> expect 404
+PATCH http://localhost:8080/api/users/{{mangaTrackerUserId}}/user-works/999
+Content-Type: application/json
+
+{
+  "rating": 5
+}
+
+### Stop tracking -> expect 204
+DELETE http://localhost:8080/api/users/{{mangaTrackerUserId}}/user-works/{{userMangaWorkId}}
+
+### Confirm it's gone -> READING tab should be empty again
+GET http://localhost:8080/api/users/{{mangaTrackerUserId}}/user-works?status=READING
