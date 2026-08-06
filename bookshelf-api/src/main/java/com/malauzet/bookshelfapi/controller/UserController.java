@@ -24,7 +24,6 @@ public class UserController {
         }
 
         User savedUser = userRepository.save(user);
-        savedUser.setPassword(null);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
     }
@@ -33,8 +32,6 @@ public class UserController {
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
-
-        user.setPassword(null);
 
         return ResponseEntity.ok(user);
     }

@@ -1,7 +1,9 @@
 package com.malauzet.bookshelfapi.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,6 +23,7 @@ public abstract class Work {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id;
 
     @NotBlank(message = "Title is required")
@@ -31,7 +34,11 @@ public abstract class Work {
     private String synopsis;
     private String coverImageUrl;
     private LocalDate publishedDate;
+
+    @Positive(message = "Total chapters must be greater than 0")
     private Integer totalChapters;
+
+    @Positive(message = "Volume number must be greater than 0")
     private Integer volumeNumber;
 
     @ElementCollection

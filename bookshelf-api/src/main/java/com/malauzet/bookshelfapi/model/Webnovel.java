@@ -1,5 +1,6 @@
 package com.malauzet.bookshelfapi.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -19,5 +20,6 @@ public class Webnovel extends Work {
 
     @ManyToOne
     @JoinColumn(name = "series_id")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private WebnovelSeries series;
 }
