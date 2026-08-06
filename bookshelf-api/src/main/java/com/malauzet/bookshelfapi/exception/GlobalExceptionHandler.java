@@ -45,6 +45,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
+    @ExceptionHandler(AudiobookSeriesNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleAudiobookSeriesNotFoundException(AudiobookSeriesNotFoundException e) {
+        ErrorResponse error = new ErrorResponse(e.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
     @ExceptionHandler(BookNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleBookNotFoundException(BookNotFoundException e) {
         ErrorResponse error = new ErrorResponse(e.getMessage(), null);
@@ -65,6 +71,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MangaNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleMangaNotFoundException(MangaNotFoundException e) {
+        ErrorResponse error = new ErrorResponse(e.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(AudiobookNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleAudiobookNotFoundException(AudiobookNotFoundException e) {
         ErrorResponse error = new ErrorResponse(e.getMessage(), null);
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }

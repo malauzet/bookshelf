@@ -1,0 +1,340 @@
+### ==================================================================
+### AUDIOBOOK SERIES
+### ==================================================================
+
+### Create an audiobook series
+POST http://localhost:8080/api/audiobook-series
+Content-Type: application/json
+
+{
+  "name": "The Wheel of Time",
+  "author": "Robert Jordan",
+  "totalVolumes": null
+}
+
+> {%
+    client.global.set("wheelOfTimeSeriesId", response.body.id);
+%}
+
+### Get all audiobook series
+GET http://localhost:8080/api/audiobook-series
+
+### Get the series just created
+GET http://localhost:8080/api/audiobook-series/{{wheelOfTimeSeriesId}}
+
+### Get a series that doesn't exist -> expect 404
+GET http://localhost:8080/api/audiobook-series/999
+
+### Update the series
+PUT http://localhost:8080/api/audiobook-series/{{wheelOfTimeSeriesId}}
+Content-Type: application/json
+
+{
+  "name": "The Wheel of Time",
+  "author": "Robert Jordan",
+  "totalVolumes": 14
+}
+
+### Update a series that doesn't exist -> expect 404
+PUT http://localhost:8080/api/audiobook-series/999
+Content-Type: application/json
+
+{
+  "name": "Doesn't matter",
+  "author": "Doesn't matter",
+  "totalVolumes": 1
+}
+
+### Create with blank name and author -> expect 400 with fieldError map
+POST http://localhost:8080/api/audiobook-series
+Content-Type: application/json
+
+{
+  "name": "",
+  "author": "",
+  "totalVolumes": 1
+}
+
+### Delete the series
+DELETE http://localhost:8080/api/audiobook-series/{{wheelOfTimeSeriesId}}
+
+### Get the deleted series -> expect 404
+GET http://localhost:8080/api/audiobook-series/{{wheelOfTimeSeriesId}}
+
+
+### ==================================================================
+### AUDIOBOOK
+### ==================================================================
+
+### Create a fresh series for the audiobook tests below
+POST http://localhost:8080/api/audiobook-series
+Content-Type: application/json
+
+{
+  "name": "Mistborn",
+  "author": "Brandon Sanderson",
+  "totalVolumes": 3
+}
+
+> {%
+    client.global.set("mistbornSeriesId", response.body.id);
+%}
+
+### Create a standalone audiobook (no series)
+POST http://localhost:8080/api/audiobooks
+Content-Type: application/json
+
+{
+  "title": "Project Hail Mary",
+  "author": "Andy Weir",
+  "synopsis": "A lone astronaut must save the earth from disaster.",
+  "coverImageUrl": null,
+  "publishedDate": "2021-05-04",
+  "totalChapters": 46,
+  "volumeNumber": null,
+  "genres": ["SCIENCE_FICTION"],
+  "narrator": "Ray Porter",
+  "totalMinutes": 970
+}
+
+> {%
+    client.global.set("hailMaryAudiobookId", response.body.id);
+%}
+
+### Create an audiobook attached to the series above
+POST http://localhost:8080/api/audiobooks?seriesId={{mistbornSeriesId}}
+Content-Type: application/json
+
+{
+  "title": "Mistborn: The Final Empire",
+  "author": "Brandon Sanderson",
+  "synopsis": "A young thief discovers she has the power to overthrow an immortal emperor.",
+  "coverImageUrl": null,
+  "publishedDate": "2006-07-17",
+  "totalChapters": 44,
+  "volumeNumber": 1,
+  "genres": ["FANTASY"],
+  "narrator": "Michael Kramer",
+  "totalMinutes": 1440
+}
+
+> {%
+    client.global.set("finalEmpireAudiobookId", response.body.id);
+%}
+
+### Get all audiobooks
+GET http://localhost:8080/api/audiobooks
+
+### Get the standalone audiobook -> series should be null
+GET http://localhost:8080/api/audiobooks/{{hailMaryAudiobookId}}
+
+### Get the series-linked audiobook -> series should be populated
+GET http://localhost:8080/api/audiobooks/{{finalEmpireAudiobookId}}
+
+### Get an audiobook that doesn't exist -> expect 404
+GET http://localhost:8080/api/audiobooks/999
+
+### Create an audiobook with a non-existent seriesId -> expect 404 (AudiobookSeriesNotFoundException)
+POST http://localhost:8080/api/audiobooks?seriesId=999
+Content-Type: application/json
+
+{
+  "title": "Doesn't matter",
+  "author": "Doesn't matter"
+}
+
+### Create an audiobook with blank title and author -> expect 400 with fieldError map
+POST http://localhost:8080/api/audiobooks
+Content-Type: application/json
+
+{
+  "title": "",
+  "author": ""
+}
+
+### Update the standalone audiobook, attaching it to the series too -> narrator/totalMinutes/volumeNumber deliberately changed from creation, to actually exercise every setter (see the missing setArtist bug caught on the LightNovel vertical)
+PUT http://localhost:8080/api/audiobooks/{{hailMaryAudiobookId}}?seriesId={{mistbornSeriesId}}
+Content-Type: application/json
+
+{
+  "title": "Project Hail Mary",
+  "author": "Andy Weir",
+  "synopsis": "A lone astronaut must save the earth from disaster.",
+  "coverImageUrl": null,
+  "publishedDate": "2021-05-04",
+  "totalChapters": 46,
+  "volumeNumber": 2,
+  "genres": ["SCIENCE_FICTION"],
+  "narrator": "George Newbern",
+  "totalMinutes": 985
+}
+
+### Update an audiobook that doesn't exist -> expect 404
+PUT http://localhost:8080/api/audiobooks/999
+Content-Type: application/json
+
+{
+  "title": "Doesn't matter",
+  "author": "Doesn't matter"
+}
+
+### Try deleting the series while audiobooks still reference it -> expect the RESTRICT FK to kick in (409)
+DELETE http://localhost:8080/api/audiobook-series/{{mistbornSeriesId}}
+
+### Delete both audiobooks
+DELETE http://localhost:8080/api/audiobooks/{{hailMaryAudiobookId}}
+
+### Delete the other audiobook
+DELETE http://localhost:8080/api/audiobooks/{{finalEmpireAudiobookId}}
+
+### Now nothing references the series -> delete should succeed this time
+DELETE http://localhost:8080/api/audiobook-series/{{mistbornSeriesId}}
+
+
+### ==================================================================
+### USER AUDIOBOOK (tracking)
+### ==================================================================
+
+### Register a dedicated user for the tracking tests below, so this file can run standalone
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "username": "audiobook-tracker",
+  "password": "supersecret",
+  "email": "audiobook-tracker@example.com"
+}
+
+> {%
+    client.global.set("audiobookTrackerUserId", response.body.id);
+%}
+
+### Create a fresh standalone audiobook to track
+POST http://localhost:8080/api/audiobooks
+Content-Type: application/json
+
+{
+  "title": "The Way of Kings",
+  "author": "Brandon Sanderson",
+  "synopsis": "A war-torn world of stone and storms where honor is dying.",
+  "coverImageUrl": null,
+  "publishedDate": "2010-08-31",
+  "totalChapters": 92,
+  "volumeNumber": null,
+  "genres": ["FANTASY"],
+  "narrator": "Michael Kramer, Kate Reading",
+  "totalMinutes": 2700
+}
+
+> {%
+    client.global.set("wayOfKingsAudiobookId", response.body.id);
+%}
+
+### Start tracking the audiobook above
+POST http://localhost:8080/api/users/{{audiobookTrackerUserId}}/audiobooks/{{wayOfKingsAudiobookId}}
+Content-Type: application/json
+
+{
+  "status": "READING",
+  "rating": null,
+  "currentChapter": 5,
+  "currentMinutes": 140
+}
+
+> {%
+    client.global.set("userAudiobookWorkId", response.body.id);
+%}
+
+### List the READING tab -> should include the tracking record just created
+GET http://localhost:8080/api/users/{{audiobookTrackerUserId}}/user-works?status=READING
+
+### List the FINISHED tab -> should be empty
+GET http://localhost:8080/api/users/{{audiobookTrackerUserId}}/user-works?status=FINISHED
+
+### Track the same audiobook again for the same user -> expect 409 (DuplicateTrackingException)
+POST http://localhost:8080/api/users/{{audiobookTrackerUserId}}/audiobooks/{{wayOfKingsAudiobookId}}
+Content-Type: application/json
+
+{
+  "status": "READING",
+  "rating": null,
+  "currentChapter": 1,
+  "currentMinutes": 1
+}
+
+### Track for a user that doesn't exist -> expect 404
+POST http://localhost:8080/api/users/999/audiobooks/{{wayOfKingsAudiobookId}}
+Content-Type: application/json
+
+{
+  "status": "PLAN_TO_READ"
+}
+
+### Track an audiobook that doesn't exist -> expect 404
+POST http://localhost:8080/api/users/{{audiobookTrackerUserId}}/audiobooks/999
+Content-Type: application/json
+
+{
+  "status": "PLAN_TO_READ"
+}
+
+### Update progress only -> status/rating should stay untouched
+PATCH http://localhost:8080/api/users/{{audiobookTrackerUserId}}/user-works/{{userAudiobookWorkId}}
+Content-Type: application/json
+
+{
+  "currentChapter": 8,
+  "currentMinutes": 220
+}
+
+### Update just the rating -> chapter/minutes from above should be unaffected
+PATCH http://localhost:8080/api/users/{{audiobookTrackerUserId}}/user-works/{{userAudiobookWorkId}}
+Content-Type: application/json
+
+{
+  "rating": 9
+}
+
+### Update with an out-of-range rating -> expect 400 (validation runs on PATCH too)
+PATCH http://localhost:8080/api/users/{{audiobookTrackerUserId}}/user-works/{{userAudiobookWorkId}}
+Content-Type: application/json
+
+{
+  "rating": 15
+}
+
+### Register a second user, to test the ownership check
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "username": "audiobook-tracker-2",
+  "password": "supersecret",
+  "email": "audiobook-tracker-2@example.com"
+}
+
+> {%
+    client.global.set("otherAudiobookTrackerUserId", response.body.id);
+%}
+
+### Try updating user 1's tracking record through user 2's path -> expect 404, not 200
+PATCH http://localhost:8080/api/users/{{otherAudiobookTrackerUserId}}/user-works/{{userAudiobookWorkId}}
+Content-Type: application/json
+
+{
+  "rating": 1
+}
+
+### Update a user-work that doesn't exist -> expect 404
+PATCH http://localhost:8080/api/users/{{audiobookTrackerUserId}}/user-works/999
+Content-Type: application/json
+
+{
+  "rating": 5
+}
+
+### Stop tracking -> expect 204
+DELETE http://localhost:8080/api/users/{{audiobookTrackerUserId}}/user-works/{{userAudiobookWorkId}}
+
+### Confirm it's gone -> READING tab should be empty again
+GET http://localhost:8080/api/users/{{audiobookTrackerUserId}}/user-works?status=READING
