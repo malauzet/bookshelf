@@ -16,6 +16,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Owns only the {@code LightNovel}-specific "start tracking" endpoint — everything else on an
+ * already-tracked {@link UserLightNovel} (get/patch/delete) is handled generically by
+ * {@link UserWorkController} (see its class Javadoc for why).
+ */
 @RestController
 @RequestMapping("/api/users/{userId}")
 @RequiredArgsConstructor
@@ -26,6 +31,11 @@ public class UserLightNovelController {
     private final UserWorkRepository userWorkRepository;
     private final UserLightNovelRepository userLightNovelRepository;
 
+    /**
+     * @throws UserNotFoundException if {@code userId} doesn't resolve
+     * @throws LightNovelNotFoundException if {@code lightNovelId} doesn't resolve
+     * @throws DuplicateTrackingException if {@code userId} is already tracking this light novel
+     */
     @PostMapping("/light-novels/{lightNovelId}")
     public ResponseEntity<UserLightNovel> trackLightNovel(@PathVariable Long userId, @PathVariable Long lightNovelId,
                                                            @RequestBody @Valid UserLightNovel userLightNovel) {

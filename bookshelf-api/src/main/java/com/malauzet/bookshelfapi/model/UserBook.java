@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/** Tracking state for a {@link User}'s progress through a {@link Book}. */
 @Entity
 @DiscriminatorValue("BOOK")
 @Getter
@@ -16,6 +17,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class UserBook extends UserWork {
 
+    /** {@code null} until the user starts reading; not cross-checked against {@code totalPages}. */
     @Positive(message = "Current page must be greater than 0")
     private Integer currentPage;
 }

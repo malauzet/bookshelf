@@ -16,6 +16,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Owns only the {@code Audiobook}-specific "start tracking" endpoint — everything else on an
+ * already-tracked {@link UserAudiobook} (get/patch/delete) is handled generically by
+ * {@link UserWorkController} (see its class Javadoc for why).
+ */
 @RestController
 @RequestMapping("/api/users/{userId}")
 @RequiredArgsConstructor
@@ -26,6 +31,11 @@ public class UserAudiobookController {
     private final UserWorkRepository userWorkRepository;
     private final UserAudiobookRepository userAudiobookRepository;
 
+    /**
+     * @throws UserNotFoundException if {@code userId} doesn't resolve
+     * @throws AudiobookNotFoundException if {@code audiobookId} doesn't resolve
+     * @throws DuplicateTrackingException if {@code userId} is already tracking this audiobook
+     */
     @PostMapping("/audiobooks/{audiobookId}")
     public ResponseEntity<UserAudiobook> trackAudiobook(@PathVariable Long userId, @PathVariable Long audiobookId,
                                                 @RequestBody @Valid UserAudiobook userAudiobook) {

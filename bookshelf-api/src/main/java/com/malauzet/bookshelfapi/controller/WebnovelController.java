@@ -14,6 +14,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Full CRUD for {@link Webnovel}. Series attachment goes through a {@code seriesId} query param
+ * resolved server-side via {@link WebnovelSeriesRepository}, not a nested {@code series} object
+ * in the request body — deserializing a partial nested entity from client JSON would be fragile
+ * compared to a typed lookup by id.
+ */
 @RestController
 @RequestMapping("/api/webnovels")
 @RequiredArgsConstructor
@@ -22,6 +28,7 @@ public class WebnovelController {
     private final WebnovelRepository webnovelRepository;
     private final WebnovelSeriesRepository webnovelSeriesRepository;
 
+    /** @throws WebnovelSeriesNotFoundException if {@code seriesId} is given but doesn't resolve */
     @PostMapping
     public ResponseEntity<Webnovel> createWebnovel(@RequestBody @Valid Webnovel webnovel, @RequestParam(required = false) Long seriesId) {
 
@@ -40,6 +47,7 @@ public class WebnovelController {
         return ResponseEntity.ok(webnovelRepository.findAll());
     }
 
+    /** @throws WebnovelNotFoundException if no webnovel exists with the given id */
     @GetMapping("/{id}")
     public ResponseEntity<Webnovel> getWebnovelById(@PathVariable Long id) {
         Webnovel webnovel = webnovelRepository.findById(id)
@@ -47,6 +55,14 @@ public class WebnovelController {
         return ResponseEntity.ok(webnovel);
     }
 
+    /**
+     * Full replace: every field in the request body overwrites the existing entity. Omitting
+     * {@code seriesId} leaves the current series untouched — there is currently no way to detach
+     * an already-assigned series via this endpoint.
+     *
+     * @throws WebnovelNotFoundException if no webnovel exists with the given id
+     * @throws WebnovelSeriesNotFoundException if {@code seriesId} is given but doesn't resolve
+     */
     @PutMapping("/{id}")
     public ResponseEntity<Webnovel> updateWebnovel(@PathVariable Long id,
                                            @RequestBody @Valid Webnovel webnovel,
@@ -73,6 +89,7 @@ public class WebnovelController {
         return ResponseEntity.ok(updated);
     }
 
+    /** @throws WebnovelNotFoundException if no webnovel exists with the given id */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteWebnovel(@PathVariable Long id) {
         if (!webnovelRepository.existsById(id)) {

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/** Full CRUD for {@link AudiobookSeries}. */
 @RestController
 @RequestMapping("/api/audiobook-series")
 @RequiredArgsConstructor
@@ -29,6 +30,7 @@ public class AudiobookSeriesController {
         return ResponseEntity.ok(audiobookSeriesRepository.findAll());
     }
 
+    /** @throws AudiobookSeriesNotFoundException if no series exists with the given id */
     @GetMapping("/{id}")
     public ResponseEntity<AudiobookSeries> getAudiobookSeriesById(@PathVariable Long id) {
         AudiobookSeries series = audiobookSeriesRepository.findById(id)
@@ -36,6 +38,11 @@ public class AudiobookSeriesController {
         return ResponseEntity.ok(series);
     }
 
+    /**
+     * Full replace: every field in the request body overwrites the existing entity.
+     *
+     * @throws AudiobookSeriesNotFoundException if no series exists with the given id
+     */
     @PutMapping("/{id}")
     public ResponseEntity<AudiobookSeries> updateAudiobookSeries(@PathVariable Long id, @RequestBody @Valid AudiobookSeries audiobookSeries) {
         AudiobookSeries existing = audiobookSeriesRepository.findById(id)
@@ -49,6 +56,7 @@ public class AudiobookSeriesController {
         return ResponseEntity.ok(updated);
     }
 
+    /** @throws AudiobookSeriesNotFoundException if no series exists with the given id */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAudiobookSeries(@PathVariable Long id) {
         if (!audiobookSeriesRepository.existsById(id)) {

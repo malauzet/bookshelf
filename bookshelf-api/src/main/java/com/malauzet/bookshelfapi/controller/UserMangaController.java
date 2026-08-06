@@ -16,6 +16,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Owns only the {@code Manga}-specific "start tracking" endpoint — everything else on an
+ * already-tracked {@link UserManga} (get/patch/delete) is handled generically by
+ * {@link UserWorkController} (see its class Javadoc for why).
+ */
 @RestController
 @RequestMapping("/api/users/{userId}")
 @RequiredArgsConstructor
@@ -26,6 +31,11 @@ public class UserMangaController {
     private final UserWorkRepository userWorkRepository;
     private final UserMangaRepository userMangaRepository;
 
+    /**
+     * @throws UserNotFoundException if {@code userId} doesn't resolve
+     * @throws MangaNotFoundException if {@code mangaId} doesn't resolve
+     * @throws DuplicateTrackingException if {@code userId} is already tracking this manga
+     */
     @PostMapping("/mangas/{mangaId}")
     public ResponseEntity<UserManga> trackManga(@PathVariable Long userId, @PathVariable Long mangaId,
                                                           @RequestBody @Valid UserManga userManga) {

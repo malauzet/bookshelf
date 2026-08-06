@@ -14,6 +14,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Full CRUD for {@link Book}. Series attachment goes through a {@code seriesId} query param
+ * resolved server-side via {@link BookSeriesRepository}, not a nested {@code series} object in
+ * the request body — deserializing a partial nested entity from client JSON would be fragile
+ * compared to a typed lookup by id.
+ */
 @RestController
 @RequestMapping("/api/books")
 @RequiredArgsConstructor
@@ -22,6 +28,7 @@ public class BookController {
     private final BookRepository bookRepository;
     private final BookSeriesRepository bookSeriesRepository;
 
+    /** @throws BookSeriesNotFoundException if {@code seriesId} is given but doesn't resolve */
     @PostMapping
     public ResponseEntity<Book> createBook(@RequestBody @Valid Book book, @RequestParam(required = false) Long seriesId) {
 
@@ -40,6 +47,7 @@ public class BookController {
         return ResponseEntity.ok(bookRepository.findAll());
     }
 
+    /** @throws BookNotFoundException if no book exists with the given id */
     @GetMapping("/{id}")
     public ResponseEntity<Book> getBookById(@PathVariable Long id) {
         Book book = bookRepository.findById(id)
@@ -47,6 +55,14 @@ public class BookController {
         return ResponseEntity.ok(book);
     }
 
+    /**
+     * Full replace: every field in the request body overwrites the existing entity. Omitting
+     * {@code seriesId} leaves the current series untouched — there is currently no way to detach
+     * an already-assigned series via this endpoint.
+     *
+     * @throws BookNotFoundException if no book exists with the given id
+     * @throws BookSeriesNotFoundException if {@code seriesId} is given but doesn't resolve
+     */
     @PutMapping("/{id}")
     public ResponseEntity<Book> updateBook(@PathVariable Long id,
                                            @RequestBody @Valid Book book,
@@ -74,6 +90,7 @@ public class BookController {
         return ResponseEntity.ok(updated);
     }
 
+    /** @throws BookNotFoundException if no book exists with the given id */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
         if (!bookRepository.existsById(id)) {

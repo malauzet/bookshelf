@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/** Full CRUD for {@link MangaSeries}. */
 @RestController
 @RequestMapping("/api/manga-series")
 @RequiredArgsConstructor
@@ -29,6 +30,7 @@ public class MangaSeriesController {
         return ResponseEntity.ok(mangaSeriesRepository.findAll());
     }
 
+    /** @throws MangaSeriesNotFoundException if no series exists with the given id */
     @GetMapping("/{id}")
     public ResponseEntity<MangaSeries> getMangaSeriesById(@PathVariable Long id) {
         MangaSeries series = mangaSeriesRepository.findById(id)
@@ -36,6 +38,11 @@ public class MangaSeriesController {
         return ResponseEntity.ok(series);
     }
 
+    /**
+     * Full replace: every field in the request body overwrites the existing entity.
+     *
+     * @throws MangaSeriesNotFoundException if no series exists with the given id
+     */
     @PutMapping("/{id}")
     public ResponseEntity<MangaSeries> updateMangaSeries(@PathVariable Long id, @RequestBody @Valid MangaSeries mangaSeries) {
         MangaSeries existing = mangaSeriesRepository.findById(id)
@@ -49,6 +56,7 @@ public class MangaSeriesController {
         return ResponseEntity.ok(updated);
     }
 
+    /** @throws MangaSeriesNotFoundException if no series exists with the given id */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteMangaSeries(@PathVariable Long id) {
         if (!mangaSeriesRepository.existsById(id)) {

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/** Full CRUD for {@link LightNovelSeries}. */
 @RestController
 @RequestMapping("/api/light-novel-series")
 @RequiredArgsConstructor
@@ -29,6 +30,7 @@ public class LightNovelSeriesController {
         return ResponseEntity.ok(lightNovelSeriesRepository.findAll());
     }
 
+    /** @throws LightNovelSeriesNotFoundException if no series exists with the given id */
     @GetMapping("/{id}")
     public ResponseEntity<LightNovelSeries> getLightNovelSeriesById(@PathVariable Long id) {
         LightNovelSeries series = lightNovelSeriesRepository.findById(id)
@@ -36,6 +38,11 @@ public class LightNovelSeriesController {
         return ResponseEntity.ok(series);
     }
 
+    /**
+     * Full replace: every field in the request body overwrites the existing entity.
+     *
+     * @throws LightNovelSeriesNotFoundException if no series exists with the given id
+     */
     @PutMapping("/{id}")
     public ResponseEntity<LightNovelSeries> updateLightNovelSeries(@PathVariable Long id, @RequestBody @Valid LightNovelSeries lightNovelSeries) {
         LightNovelSeries existing = lightNovelSeriesRepository.findById(id)
@@ -49,6 +56,7 @@ public class LightNovelSeriesController {
         return ResponseEntity.ok(updated);
     }
 
+    /** @throws LightNovelSeriesNotFoundException if no series exists with the given id */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteLightNovelSeries(@PathVariable Long id) {
         if (!lightNovelSeriesRepository.existsById(id)) {

@@ -16,6 +16,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Owns only the {@code Webnovel}-specific "start tracking" endpoint — everything else on an
+ * already-tracked {@link UserWebnovel} (get/patch/delete) is handled generically by
+ * {@link UserWorkController} (see its class Javadoc for why).
+ */
 @RestController
 @RequestMapping("/api/users/{userId}")
 @RequiredArgsConstructor
@@ -26,6 +31,11 @@ public class UserWebnovelController {
     private final UserWorkRepository userWorkRepository;
     private final UserWebnovelRepository userWebnovelRepository;
 
+    /**
+     * @throws UserNotFoundException if {@code userId} doesn't resolve
+     * @throws WebnovelNotFoundException if {@code webnovelId} doesn't resolve
+     * @throws DuplicateTrackingException if {@code userId} is already tracking this webnovel
+     */
     @PostMapping("/webnovels/{webnovelId}")
     public ResponseEntity<UserWebnovel> trackWebnovel(@PathVariable Long userId, @PathVariable Long webnovelId,
                                               @RequestBody @Valid UserWebnovel userWebnovel) {

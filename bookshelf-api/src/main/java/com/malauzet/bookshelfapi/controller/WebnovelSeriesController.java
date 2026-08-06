@@ -11,11 +11,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/** Full CRUD for {@link WebnovelSeries}. */
 @RestController
 @RequestMapping("/api/webnovel-series")
 @RequiredArgsConstructor
 public class WebnovelSeriesController {
-    
+
     private final WebnovelSeriesRepository webnovelSeriesRepository;
 
     @PostMapping
@@ -29,6 +30,7 @@ public class WebnovelSeriesController {
         return ResponseEntity.ok(webnovelSeriesRepository.findAll());
     }
 
+    /** @throws WebnovelSeriesNotFoundException if no series exists with the given id */
     @GetMapping("/{id}")
     public ResponseEntity<WebnovelSeries> getWebnovelSeriesById(@PathVariable Long id) {
         WebnovelSeries series = webnovelSeriesRepository.findById(id)
@@ -36,6 +38,11 @@ public class WebnovelSeriesController {
         return ResponseEntity.ok(series);
     }
 
+    /**
+     * Full replace: every field in the request body overwrites the existing entity.
+     *
+     * @throws WebnovelSeriesNotFoundException if no series exists with the given id
+     */
     @PutMapping("/{id}")
     public ResponseEntity<WebnovelSeries> updateWebnovelSeries(@PathVariable Long id, @RequestBody @Valid WebnovelSeries webnovelSeries) {
         WebnovelSeries existing = webnovelSeriesRepository.findById(id)
@@ -49,6 +56,7 @@ public class WebnovelSeriesController {
         return ResponseEntity.ok(updated);
     }
 
+    /** @throws WebnovelSeriesNotFoundException if no series exists with the given id */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteWebnovelSeries(@PathVariable Long id) {
         if (!webnovelSeriesRepository.existsById(id)) {

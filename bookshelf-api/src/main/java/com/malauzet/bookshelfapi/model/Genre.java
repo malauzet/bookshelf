@@ -3,6 +3,14 @@ package com.malauzet.bookshelfapi.model;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Closed, code-controlled genre vocabulary for a {@link Work} (orthogonal to format — a
+ * {@code Manga} can be {@code FANTASY} just as easily as a {@code Book} can). Persisted via
+ * {@code @Enumerated(EnumType.STRING)} on {@code Work.genres}, so renaming or removing a constant
+ * already in use requires an explicit data migration (an {@code UPDATE} before the code change
+ * ships), not just a recompile — {@code STRING} storage only protects against reordering, not
+ * renaming. Adding a new constant is always safe.
+ */
 @Getter
 @RequiredArgsConstructor
 public enum Genre {
@@ -58,5 +66,6 @@ public enum Genre {
     COMPETITION("Competition"),
     LITRPG("LitRPG");
 
+    /** Human-readable label for UI display; the enum constant itself is what's persisted. */
     private final String displayName;
 }

@@ -16,6 +16,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Owns only the {@code Book}-specific "start tracking" endpoint — everything else on an
+ * already-tracked {@link UserBook} (get/patch/delete) is handled generically by
+ * {@link UserWorkController} (see its class Javadoc for why).
+ */
 @RestController
 @RequestMapping("/api/users/{userId}")
 @RequiredArgsConstructor
@@ -26,6 +31,11 @@ public class UserBookController {
     private final UserWorkRepository userWorkRepository;
     private final UserBookRepository userBookRepository;
 
+    /**
+     * @throws UserNotFoundException if {@code userId} doesn't resolve
+     * @throws BookNotFoundException if {@code bookId} doesn't resolve
+     * @throws DuplicateTrackingException if {@code userId} is already tracking this book
+     */
     @PostMapping("/books/{bookId}")
     public ResponseEntity<UserBook> trackBook(@PathVariable Long userId, @PathVariable Long bookId,
                                               @RequestBody @Valid UserBook userBook) {

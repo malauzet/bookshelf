@@ -12,6 +12,12 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Central mapping from exceptions to structured {@link ErrorResponse} JSON bodies, so callers get
+ * a consistent {@code 4xx}/{@code 5xx} shape instead of raw stack traces. Covers every custom
+ * "not found"/"duplicate" exception, Bean Validation failures, DB constraint violations, and a
+ * catch-all fallback for anything unexpected.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -99,6 +105,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
+    /** Collects every {@code @Valid} field failure into one response, rather than only the first. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException e) {
         Map<String, String> fieldErrors = new HashMap<>();
@@ -110,6 +117,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
+    /**
+     * Distinguishes a unique-constraint violation ({@code 23505}) from a foreign-key-restrict
+     * violation ({@code 23503}) using the ANSI-standard SQLSTATE code rather than DB-specific
+     * error text, so this stays correct across the planned PostgreSQL migration (currently H2).
+     */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
 
@@ -129,6 +141,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
+    /** Fallback for anything not handled above — returns a structured body instead of a raw 500. */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpectedException(Exception e) {
         ErrorResponse error = new ErrorResponse("An unexpected error occurred", null);
