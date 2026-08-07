@@ -6,3 +6,11 @@ export interface UserWork {
     rating: number | null;
     currentChapter: number | null;
 }
+
+export interface UserWorkUpdateRequest {
+    status?: ReadingStatus;
+    rating?: number;
+    currentChapter?: number;
+    currentPage?: number;
+    currentMinutes?: number;
+}
